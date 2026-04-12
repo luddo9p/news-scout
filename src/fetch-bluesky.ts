@@ -1,6 +1,6 @@
 import type { SourceResult, ContentItem } from "./types.js";
 
-const BSKY_API = "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts";
+const BSKY_PDS = "https://bsky.social";
 const TIMEOUT_MS = 5000;
 const LIMIT = 20;
 
@@ -26,6 +26,12 @@ interface BlueskySearchResponse {
   cursor?: string;
 }
 
+interface SessionResponse {
+  accessJwt: string;
+  did: string;
+  handle: string;
+}
+
 function extractPostId(uri: string): string {
   const parts = uri.split("/");
   return parts[parts.length - 1];
@@ -45,15 +51,54 @@ function postToContentItem(post: BlueskyPost): ContentItem {
   };
 }
 
-export async function fetchBluesky(hashtags: string[]): Promise<SourceResult> {
+async function createSession(
+  handle: string,
+  appPassword: string,
+): Promise<string> {
+  const response = await fetch(
+    `${BSKY_PDS}/xrpc/com.atproto.server.createSession`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        identifier: handle,
+        password: appPassword,
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Bluesky auth failed (${response.status}): ${body}`);
+  }
+
+  const data: SessionResponse = await response.json();
+  return data.accessJwt;
+}
+
+export async function fetchBluesky(
+  hashtags: string[],
+  handle?: string,
+  appPassword?: string,
+): Promise<SourceResult> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const query = hashtags.join(" ");
-    const url = `${BSKY_API}?q=${encodeURIComponent(query)}&limit=${LIMIT}`;
+    // Authenticate if credentials are provided
+    let authHeader: Record<string, string> = {};
+    if (handle && appPassword) {
+      const accessJwt = await createSession(handle, appPassword);
+      authHeader = { Authorization: `Bearer ${accessJwt}` };
+    }
 
-    const response = await fetch(url, { signal: controller.signal });
+    const query = hashtags.join(" ");
+    const url = `${BSKY_PDS}/xrpc/app.bsky.feed.searchPosts?q=${encodeURIComponent(query)}&limit=${LIMIT}`;
+
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: authHeader,
+    });
     clearTimeout(timeout);
 
     if (!response.ok) {

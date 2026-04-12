@@ -20,8 +20,10 @@ const handler: Handler = async () => {
 
   // 1. Fetch all sources in parallel
   console.log("[Agent Scout] Fetching sources...");
+  const blueskyHandle = process.env.BLUESKY_HANDLE;
+  const blueskyAppPassword = process.env.BLUESKY_APP_PASSWORD;
   const results = await Promise.allSettled([
-    fetchBluesky(BLUESKY_HASHTAGS),
+    fetchBluesky(BLUESKY_HASHTAGS, blueskyHandle, blueskyAppPassword),
     fetchHackerNews(HN_QUERIES),
     fetchTwitter(),
   ]);
@@ -134,6 +136,7 @@ const handler: Handler = async () => {
 
   return {
     statusCode: emailResult.success ? 200 : 500,
+    headers: { "Content-Type": "application/json; charset=utf-8" },
     body: JSON.stringify(result),
   };
 };
