@@ -108,4 +108,4 @@ Configuration dans `netlify.toml` :
   function = "scout"
 ```
 
-Note : Netlify Scheduled Functions utilise UTC. Heure d'été Paris = UTC+2, heure d'hiver = UTC+1. Le cron ci-dessus est pour l'heure d'été. Pour un support complet toute l'année, il faudrait ajuster manuellement ou utiliser une solution plus flexible.
+Note : Netlify Scheduled Functions utilise UTC. Paris est UTC+1 en hiver et UTC+2 en été. La config ci-dessus cible l'heure d'été (CEST). Pour simplifier, on garde ces horaires toute l'année — le décalage d'une heure en hiver (8h/16h UTC au lieu de 7h/15h UTC) est acceptable pour une veille. Si un ajustement précis est nécessaire, il faudra modifier le cron manuellement deux fois par an ou utiliser un déclencheur externe.

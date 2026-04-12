@@ -3,3 +3,4 @@
 [2026-04-12 11:09:18] ls -la /Users/ludo9p/www/
 [2026-04-12 11:14:01] mkdir -p /Users/ludo9p/www/agent-scout/docs/superpowers/specs
 [2026-04-12 11:14:55] git init && git add -A && git commit -m "docs: add agent-scout design spec"
+[2026-04-12 11:16:11] git add -A && git commit -m "docs: clarify timezone handling in cron config"
