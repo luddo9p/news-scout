@@ -26,7 +26,7 @@ Structure obligatoire avec ces 3 sections :
 
 2. **Nouveaux Outils** — Outils, projets, librairies ou frameworks mentionnés. Inclus les liens quand disponibles.
 
-3. **Tendances** — Tendances émergentes ou patterns récurrents observés dans les contenus.
+3. **Tendances** — Tendances émergentes ou patterns récurrents observés dans les contenus. Chaque tendance DOIT citer ses sources entre parenthèses avec le nom de la source (Bluesky, Hacker News, Reddit) et un lien vers le contenu origine quand c'est pertinent.
 
 Si une section n'a pas de contenu pertinent, affiche « Rien de notable cette fois-ci » plutôt que de forcer des items.
 
@@ -50,7 +50,7 @@ Exemple de sortie attendue :
 </ul>
 <h2 style="font-size:20px;font-weight:700;color:#1c1c1e;margin:0 0 16px;padding-bottom:12px;border-bottom:1px solid #e5e5ea;">Tendances</h2>
 <ul style="padding-left:0;list-style:none;margin:0;">
-  <li style="margin-bottom:12px;color:#3c3c43;">Tendance observée avec explication contextuelle.</li>
+  <li style="margin-bottom:12px;color:#3c3c43;">Tendance observée avec explication contextuelle. <em style="color:#8e8e93;font-size:13px;">(Bluesky, Hacker News, Reddit)</em></li>
 </ul>`;
 
 export function buildPrompt(sources: SourceResult[]): string {

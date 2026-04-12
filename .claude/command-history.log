@@ -227,3 +227,4 @@ console.log('Result:', JSON.stringify(result, null, 2));
 [2026-04-12 13:28:55] source .env && export GEMINI_API_KEY RESEND_API_KEY RESEND_FROM RESEND_TO BLUESKY_HANDLE BLUESKY_APP_PASSWORD APIFY_API_KEY && ./node_modules/.bin/tsx test-e2e.ts 2>&1
 [2026-04-12 13:30:29] source .env && export GEMINI_API_KEY RESEND_API_KEY RESEND_FROM RESEND_TO BLUESKY_HANDLE BLUESKY_APP_PASSWORD APIFY_API_KEY && ./node_modules/.bin/tsx test-e2e.ts 2>&1
 [2026-04-12 13:36:38] rm -f test-e2e.ts && git add -A && git commit -m "fix: increase Gemini timeout to 60s, clean up test files"
+[2026-04-12 13:39:07] git add -A && git commit -m "feat: cite sources in Tendances section of LLM prompt"
