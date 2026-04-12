@@ -205,3 +205,12 @@ console.log('Result:', JSON.stringify(result, null, 2));
 - Handler: 4 sources in Promise.allSettled (Bluesky, HN, Reddit, Twitter)
 - Email footer: added Reddit
 - Timeouts: increased Bluesky to 15s, Reddit to 15s"
+[2026-04-12 13:12:44] npx vitest run 2>&1
+[2026-04-12 13:13:09] source .env && export GROQ_API_KEY RESEND_API_KEY RESEND_FROM RESEND_TO BLUESKY_HANDLE BLUESKY_APP_PASSWORD APIFY_API_KEY && ./node_modules/.bin/tsx test-e2e.ts 2>&1
+[2026-04-12 13:13:43] rm -f test-e2e.ts test-sources.ts test-bluesky-debug.ts
+[2026-04-12 13:13:57] git add -A && git commit -m "fix: reduce token usage for Groq API
+
+- Limit to 10 items per source (sorted by score)
+- Truncate summaries to 150 chars
+- Increase Groq timeout to 15s
+- Increase Bluesky timeout to 15s"

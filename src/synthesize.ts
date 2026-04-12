@@ -2,7 +2,9 @@ import type { SourceResult } from "./types.js";
 
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 const MODEL = "llama-3.3-70b-versatile";
-const TIMEOUT_MS = 10000;
+const TIMEOUT_MS = 15000;
+const MAX_ITEMS_PER_SOURCE = 10;
+const MAX_SUMMARY_LENGTH = 150;
 
 const SYSTEM_PROMPT = `Tu es Agent Scout, un analyste de veille technologique. Tu synthétises des contenus provenant de différentes sources web en un résumé structuré en HTML.
 
@@ -74,12 +76,20 @@ export function buildPrompt(sources: SourceResult[]): string {
       content += "(Aucun contenu trouvé)\n\n";
       continue;
     }
-    for (const item of source.items) {
+    // Limit items and truncate summaries to stay within token limits
+    const items = source.items
+      .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+      .slice(0, MAX_ITEMS_PER_SOURCE);
+    for (const item of items) {
+      const summary =
+        item.summary.length > MAX_SUMMARY_LENGTH
+          ? item.summary.slice(0, MAX_SUMMARY_LENGTH) + "..."
+          : item.summary;
       content += `- **${item.title}**`;
       if (item.author) content += ` (par ${item.author})`;
       if (item.score) content += ` [${item.score} points]`;
       content += `\n  Lien : ${item.url}`;
-      content += `\n  Résumé : ${item.summary}\n`;
+      content += `\n  Résumé : ${summary}\n`;
     }
     content += "\n";
   }
