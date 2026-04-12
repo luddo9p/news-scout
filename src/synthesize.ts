@@ -2,7 +2,7 @@ import type { SourceResult } from "./types.js";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const MODEL = "gemini-2.5-flash";
-const TIMEOUT_MS = 30000;
+const TIMEOUT_MS = 60000;
 const MAX_ITEMS_PER_SOURCE = 10;
 const MAX_SUMMARY_LENGTH = 150;
 
