@@ -39,6 +39,49 @@ describe("buildPrompt", () => {
     expect(prompt).toContain("À lire absolument");
   });
 
+  it("should include anti-hallucination and language rules", () => {
+    const sources: SourceResult[] = [
+      {
+        source: "Test",
+        items: [
+          {
+            title: "Item",
+            url: "https://example.com",
+            summary: "Test",
+            source: "Test",
+          },
+        ],
+      },
+    ];
+
+    const prompt = buildPrompt(sources);
+
+    expect(prompt).toContain("N'invente aucun lien");
+    expect(prompt).toContain("Rédige en français");
+    expect(prompt).toContain("fusionne-les en un seul item");
+  });
+
+  it("should include score information for prioritization", () => {
+    const sources: SourceResult[] = [
+      {
+        source: "Hacker News",
+        items: [
+          {
+            title: "Popular Story",
+            url: "https://example.com/popular",
+            summary: "Very popular",
+            source: "Hacker News",
+            score: 342,
+          },
+        ],
+      },
+    ];
+
+    const prompt = buildPrompt(sources);
+
+    expect(prompt).toContain("342 points");
+  });
+
   it("should include error messages for failed sources", () => {
     const sources: SourceResult[] = [
       {

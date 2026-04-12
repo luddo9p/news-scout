@@ -1,8 +1,9 @@
 import type { SourceResult, ContentItem } from "./types.js";
 
 const BSKY_PDS = "https://bsky.social";
-const TIMEOUT_MS = 5000;
-const LIMIT = 20;
+const TIMEOUT_MS = 15000;
+const SEARCH_LIMIT = 40;
+const MIN_FOLLOWERS = 1000;
 
 interface BlueskyAuthor {
   did: string;
@@ -30,6 +31,13 @@ interface SessionResponse {
   accessJwt: string;
   did: string;
   handle: string;
+}
+
+interface BlueskyProfileView {
+  did: string;
+  handle: string;
+  displayName?: string;
+  followersCount?: number;
 }
 
 function extractPostId(uri: string): string {
@@ -76,6 +84,37 @@ async function createSession(
   return data.accessJwt;
 }
 
+async function getProfilesBatch(
+  dids: string[],
+  authHeader: Record<string, string>,
+): Promise<Map<string, number>> {
+  const followersMap = new Map<string, number>();
+
+  // Batch max 25 DIDs per request
+  for (let i = 0; i < dids.length; i += 25) {
+    const batch = dids.slice(i, i + 25);
+    const params = batch
+      .map((did) => `actors=${encodeURIComponent(did)}`)
+      .join("&");
+    const url = `${BSKY_PDS}/xrpc/app.bsky.actor.getProfiles?${params}`;
+
+    try {
+      const response = await fetch(url, { headers: authHeader });
+      if (!response.ok) continue;
+
+      const data = await response.json();
+      const profiles: BlueskyProfileView[] = data.profiles ?? [];
+      for (const profile of profiles) {
+        followersMap.set(profile.did, profile.followersCount ?? 0);
+      }
+    } catch {
+      // Skip this batch on error
+    }
+  }
+
+  return followersMap;
+}
+
 export async function fetchBluesky(
   hashtags: string[],
   handle?: string,
@@ -92,25 +131,48 @@ export async function fetchBluesky(
       authHeader = { Authorization: `Bearer ${accessJwt}` };
     }
 
-    const query = hashtags.join(" ");
-    const url = `${BSKY_PDS}/xrpc/app.bsky.feed.searchPosts?q=${encodeURIComponent(query)}&limit=${LIMIT}`;
+    // Search each hashtag separately and merge results
+    const allPosts: BlueskyPost[] = [];
+    const seenUris = new Set<string>();
 
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: authHeader,
-    });
-    clearTimeout(timeout);
+    for (const tag of hashtags) {
+      const url = `${BSKY_PDS}/xrpc/app.bsky.feed.searchPosts?q=${encodeURIComponent(tag)}&limit=${SEARCH_LIMIT}&sort=top`;
 
-    if (!response.ok) {
-      return {
-        source: "Bluesky",
-        items: [],
-        error: `API returned ${response.status}: ${response.statusText}`,
-      };
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: authHeader,
+      });
+
+      if (!response.ok) {
+        // If one tag fails, continue with others
+        continue;
+      }
+
+      const data: BlueskySearchResponse = await response.json();
+      for (const post of data.posts ?? []) {
+        if (!seenUris.has(post.uri)) {
+          seenUris.add(post.uri);
+          allPosts.push(post);
+        }
+      }
     }
 
-    const data: BlueskySearchResponse = await response.json();
-    const items: ContentItem[] = (data.posts ?? []).map(postToContentItem);
+    clearTimeout(timeout);
+
+    let posts: BlueskyPost[] = allPosts;
+
+    // Filter by follower count if authenticated
+    if (authHeader.Authorization && posts.length > 0) {
+      const uniqueDids = [...new Set(posts.map((p) => p.author.did))];
+      const followersMap = await getProfilesBatch(uniqueDids, authHeader);
+
+      posts = posts.filter((post) => {
+        const followers = followersMap.get(post.author.did) ?? 0;
+        return followers >= MIN_FOLLOWERS;
+      });
+    }
+
+    const items: ContentItem[] = posts.map(postToContentItem);
 
     return { source: "Bluesky", items };
   } catch (err) {

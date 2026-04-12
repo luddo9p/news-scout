@@ -1,6 +1,7 @@
 import type { Handler } from "@netlify/functions";
 import { fetchBluesky } from "../../src/fetch-bluesky.js";
 import { fetchHackerNews } from "../../src/fetch-hackernews.js";
+import { fetchReddit } from "../../src/fetch-reddit.js";
 import { fetchTwitter } from "../../src/fetch-twitter.js";
 import { synthesize } from "../../src/synthesize.js";
 import {
@@ -10,8 +11,23 @@ import {
 } from "../../src/send-email.js";
 import type { ScoutResult, SourceResult } from "../../src/types.js";
 
-const BLUESKY_HASHTAGS = ["#vibecoding", "#IA"];
+const BLUESKY_HASHTAGS = [
+  "#vibecoding",
+  "#vibecode",
+  "#claudecode",
+  "#claude",
+  "#codex",
+  "#IA",
+];
 const HN_QUERIES = ["AI", "LLM"];
+const REDDIT_SUBREDDITS = [
+  "MachineLearning",
+  "LocalLLaMA",
+  "ChatGPT",
+  "ClaudeAI",
+  "coding",
+];
+const REDDIT_KEYWORDS = ["AI", "LLM", "vibe coding", "Claude"];
 
 const handler: Handler = async () => {
   console.log("[Agent Scout] Starting scout run...");
@@ -25,11 +41,12 @@ const handler: Handler = async () => {
   const results = await Promise.allSettled([
     fetchBluesky(BLUESKY_HASHTAGS, blueskyHandle, blueskyAppPassword),
     fetchHackerNews(HN_QUERIES),
+    fetchReddit(REDDIT_SUBREDDITS, REDDIT_KEYWORDS),
     fetchTwitter(),
   ]);
 
   const sources: SourceResult[] = results.map((result, index) => {
-    const sourceNames = ["Bluesky", "Hacker News", "X/Twitter"];
+    const sourceNames = ["Bluesky", "Hacker News", "Reddit", "X/Twitter"];
     if (result.status === "fulfilled") {
       return result.value;
     }
