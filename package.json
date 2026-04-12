@@ -10,6 +10,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@netlify/functions": "^2.4.1",
     "groq-sdk": "^1.1.2",
     "resend": "^4.0.0"

@@ -81,27 +81,27 @@ const handler: Handler = async () => {
     };
   }
 
-  // 3. Synthesize with Groq
-  console.log("[Agent Scout] Synthesizing with Groq...");
-  const groqApiKey = process.env.GROQ_API_KEY;
-  if (!groqApiKey) {
-    console.error("[Agent Scout] Missing GROQ_API_KEY");
+  // 3. Synthesize with Gemini
+  console.log("[Agent Scout] Synthesizing with Gemini...");
+  const geminiApiKey = process.env.GEMINI_API_KEY;
+  if (!geminiApiKey) {
+    console.error("[Agent Scout] Missing GEMINI_API_KEY");
     return {
       statusCode: 500,
-      body: JSON.stringify({ success: false, error: "Missing GROQ_API_KEY" }),
+      body: JSON.stringify({ success: false, error: "Missing GEMINI_API_KEY" }),
     };
   }
 
   let htmlContent: string;
   try {
-    htmlContent = await synthesize(sources, groqApiKey);
+    htmlContent = await synthesize(sources, geminiApiKey);
   } catch (err) {
-    console.error("[Agent Scout] Groq synthesis failed:", err);
+    console.error("[Agent Scout] Gemini synthesis failed:", err);
     return {
       statusCode: 500,
       body: JSON.stringify({
         success: false,
-        error: `Groq synthesis failed: ${err instanceof Error ? err.message : String(err)}`,
+        error: `Gemini synthesis failed: ${err instanceof Error ? err.message : String(err)}`,
       }),
     };
   }

@@ -214,3 +214,13 @@ console.log('Result:', JSON.stringify(result, null, 2));
 - Truncate summaries to 150 chars
 - Increase Groq timeout to 15s
 - Increase Bluesky timeout to 15s"
+[2026-04-12 13:20:57] npx vitest run 2>&1
+[2026-04-12 13:23:01] npm install @google/generative-ai 2>&1 | tail -3
+[2026-04-12 13:26:01] npx vitest run 2>&1 && echo "---" && npx tsc --noEmit 2>&1
+[2026-04-12 13:27:24] git add -A && git commit -m "feat: replace Groq with Google Gemini 2.5 Flash
+
+- Switch from Groq (12K TPM limit) to Gemini 2.5 Flash (250K TPM free)
+- Use @google/generative-ai SDK instead of raw fetch
+- Update env var from GROQ_API_KEY to GEMINI_API_KEY
+- Update tests to mock Gemini SDK
+- Increase synthesis timeout to 30s"

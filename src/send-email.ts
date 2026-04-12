@@ -41,27 +41,41 @@ export function buildEmailHtml(content: string, date: Date): string {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="margin:0;padding:0;background-color:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1a1a1a;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;padding:20px;">
+<body style="margin:0;padding:0;background-color:#f2f2f7;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',Roboto,sans-serif;color:#1c1c1e;-webkit-font-smoothing:antialiased;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;margin:0 auto;">
     <tr>
-      <td style="background-color:#1a1a2e;border-radius:12px 12px 0 0;padding:24px;text-align:center;">
-        <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">
-          &#128270; Agent Scout
-        </h1>
-        <p style="margin:8px 0 0;color:#a0a0b8;font-size:14px;">
-          Veille IA &amp; Vibe Coding &mdash; ${formattedDate}
+      <td style="padding:40px 0 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding:0 24px;">
+              <h1 style="margin:0;font-size:28px;font-weight:700;letter-spacing:-0.5px;color:#1c1c1e;">
+                Agent Scout
+              </h1>
+              <p style="margin:6px 0 0;font-size:15px;font-weight:400;color:#8e8e93;">
+                ${formattedDate}
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:0 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:16px;overflow:hidden;">
+          <tr>
+            <td style="padding:28px 24px;">
+              ${content}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:24px 24px 40px;text-align:center;">
+        <p style="margin:0;font-size:12px;color:#8e8e93;line-height:1.5;">
+          Généré automatiquement par Agent Scout<br>
+          Sources : Bluesky &bull; Hacker News &bull; X/Twitter
         </p>
-      </td>
-    </tr>
-    <tr>
-      <td style="background-color:#ffffff;padding:24px;border-radius:0 0 12px 12px;">
-        ${content}
-      </td>
-    </tr>
-    <tr>
-      <td style="text-align:center;padding:20px;color:#888888;font-size:12px;">
-        <p style="margin:0;">Généré automatiquement par Agent Scout</p>
-        <p style="margin:4px 0 0;">Sources : Bluesky &bull; Hacker News &bull; Reddit &bull; X/Twitter</p>
       </td>
     </tr>
   </table>

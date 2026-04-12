@@ -1,8 +1,8 @@
 import type { SourceResult } from "./types.js";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-const MODEL = "llama-3.3-70b-versatile";
-const TIMEOUT_MS = 15000;
+const MODEL = "gemini-2.5-flash";
+const TIMEOUT_MS = 30000;
 const MAX_ITEMS_PER_SOURCE = 10;
 const MAX_SUMMARY_LENGTH = 150;
 
@@ -33,24 +33,24 @@ Si une section n'a pas de contenu pertinent, affiche « Rien de notable cette fo
 Format HTML requis :
 - Utilise <h2> pour les sections avec style inline coloré
 - Utilise <ul>/<li> pour les listes
-- Chaque item doit avoir un <a href="..." style="color:#2563eb">lien</a> cliquable
+- Chaque item doit avoir un <a href="..." style="color:#007AFF;text-decoration:none;font-weight:500;">lien</a> cliquable
 - Ajoute une phrase de contexte après chaque lien
 - Utilise <em> pour les noms d'auteurs/sources
 - Pas de CSS classes, que des styles inline
 - Style moderne et lisible, fond blanc, texte sombre
 
 Exemple de sortie attendue :
-<h2 style="color:#1a1a2e;font-size:18px;border-bottom:2px solid #e5e7eb;padding-bottom:8px;">À lire absolument</h2>
-<ul style="padding-left:20px;">
-  <li style="margin-bottom:12px;"><a href="https://example.com/article" style="color:#2563eb;">Titre de l'article</a> — Une phrase de contexte qui résume l'impact. <em>(par auteur, Hacker News, 342 points)</em></li>
+<h2 style="font-size:20px;font-weight:700;color:#1c1c1e;margin:0 0 16px;padding-bottom:12px;border-bottom:1px solid #e5e5ea;">À lire absolument</h2>
+<ul style="padding-left:0;list-style:none;margin:0 0 28px;">
+  <li style="margin-bottom:16px;"><a href="https://example.com/article" style="color:#007AFF;text-decoration:none;font-weight:500;">Titre de l'article</a><span style="color:#3c3c43;"> — Une phrase de contexte qui résume l'impact.</span> <em style="color:#8e8e93;font-size:13px;">(par auteur, Hacker News, 342 points)</em></li>
 </ul>
-<h2 style="color:#1a1a2e;font-size:18px;border-bottom:2px solid #e5e7eb;padding-bottom:8px;">Nouveaux Outils</h2>
-<ul style="padding-left:20px;">
-  <li style="margin-bottom:8px;"><a href="https://github.com/..." style="color:#2563eb;">Nom de l'outil</a> — Description courte. <em>(par auteur, Bluesky)</em></li>
+<h2 style="font-size:20px;font-weight:700;color:#1c1c1e;margin:0 0 16px;padding-bottom:12px;border-bottom:1px solid #e5e5ea;">Nouveaux Outils</h2>
+<ul style="padding-left:0;list-style:none;margin:0 0 28px;">
+  <li style="margin-bottom:16px;"><a href="https://github.com/..." style="color:#007AFF;text-decoration:none;font-weight:500;">Nom de l'outil</a><span style="color:#3c3c43;"> — Description courte.</span> <em style="color:#8e8e93;font-size:13px;">(par auteur, Bluesky)</em></li>
 </ul>
-<h2 style="color:#1a1a2e;font-size:18px;border-bottom:2px solid #e5e7eb;padding-bottom:8px;">Tendances</h2>
-<ul style="padding-left:20px;">
-  <li style="margin-bottom:8px;">Tendance observée avec explication contextuelle.</li>
+<h2 style="font-size:20px;font-weight:700;color:#1c1c1e;margin:0 0 16px;padding-bottom:12px;border-bottom:1px solid #e5e5ea;">Tendances</h2>
+<ul style="padding-left:0;list-style:none;margin:0;">
+  <li style="margin-bottom:12px;color:#3c3c43;">Tendance observée avec explication contextuelle.</li>
 </ul>`;
 
 export function buildPrompt(sources: SourceResult[]): string {
@@ -103,40 +103,31 @@ export async function synthesize(
 ): Promise<string> {
   const userPrompt = buildPrompt(sources);
 
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({
+    model: MODEL,
+    systemInstruction: SYSTEM_PROMPT,
+  });
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
-    const response = await fetch(GROQ_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      signal: controller.signal,
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.3,
-        max_tokens: 2000,
-      }),
-    });
+    const result = await Promise.race([
+      model.generateContent(userPrompt),
+      new Promise<never>((_, reject) =>
+        controller.signal.addEventListener("abort", () =>
+          reject(new Error("Gemini API timeout")),
+        ),
+      ),
+    ]);
 
     clearTimeout(timeout);
 
-    if (!response.ok) {
-      const errorBody = await response.text();
-      throw new Error(`Groq API error ${response.status}: ${errorBody}`);
-    }
+    const htmlContent = result.response.text();
 
-    const data = await response.json();
-    const htmlContent: string = data.choices?.[0]?.message?.content;
-
-    if (!htmlContent) {
-      throw new Error("Groq returned empty content");
+    if (!htmlContent || htmlContent.trim().length === 0) {
+      throw new Error("Gemini returned empty content");
     }
 
     return htmlContent;

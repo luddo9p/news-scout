@@ -2,6 +2,19 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { buildPrompt, synthesize } from "../src/synthesize.js";
 import type { SourceResult } from "../src/types.js";
 
+vi.mock("@google/generative-ai", () => ({
+  GoogleGenerativeAI: vi.fn().mockImplementation(() => ({
+    getGenerativeModel: vi.fn().mockReturnValue({
+      generateContent: vi.fn().mockResolvedValue({
+        response: {
+          text: () =>
+            '<h2 style="font-size:20px;">À lire absolument</h2><p>Test content</p>',
+        },
+      }),
+    }),
+  })),
+}));
+
 describe("buildPrompt", () => {
   it("should build a prompt with all source content", () => {
     const sources: SourceResult[] = [
@@ -99,26 +112,7 @@ describe("buildPrompt", () => {
 });
 
 describe("synthesize", () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it("should call Groq API and return HTML content", async () => {
-    const mockCompletion = {
-      choices: [
-        {
-          message: {
-            content:
-              "<h1>Agent Scout</h1><h2>À lire absolument</h2><p>Test content</p>",
-          },
-        },
-      ],
-    };
-
-    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify(mockCompletion), { status: 200 }),
-    );
-
+  it("should call Gemini API and return HTML content", async () => {
     const result = await synthesize(
       [
         {
@@ -133,7 +127,7 @@ describe("synthesize", () => {
           ],
         },
       ],
-      "fake-groq-key",
+      "fake-gemini-key",
     );
 
     expect(result).toContain("À lire absolument");
