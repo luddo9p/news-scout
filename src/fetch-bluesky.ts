@@ -1,8 +1,8 @@
 import type { SourceResult, ContentItem } from "./types.js";
 
 const BSKY_PDS = "https://bsky.social";
-const TIMEOUT_MS = 15000;
-const SEARCH_LIMIT = 40;
+const TIMEOUT_MS = 10000;
+const SEARCH_LIMIT = 20;
 const MIN_FOLLOWERS = 1000;
 
 interface BlueskyAuthor {

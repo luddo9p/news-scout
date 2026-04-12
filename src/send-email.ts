@@ -74,7 +74,7 @@ export function buildEmailHtml(content: string, date: Date): string {
       <td style="padding:24px 24px 40px;text-align:center;">
         <p style="margin:0;font-size:12px;color:#8e8e93;line-height:1.5;">
           Généré automatiquement par Agent Scout<br>
-          Sources : Bluesky &bull; Hacker News &bull; X/Twitter
+          Sources : Bluesky &bull; Hacker News &bull; Reddit &bull; X/Twitter
         </p>
       </td>
     </tr>

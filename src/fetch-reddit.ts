@@ -1,7 +1,7 @@
 import type { SourceResult, ContentItem } from "./types.js";
 
 const REDDIT_BASE = "https://www.reddit.com";
-const TIMEOUT_MS = 15000;
+const TIMEOUT_MS = 10000;
 const POSTS_PER_SUBREDDIT = 10;
 
 interface RedditPostData {
