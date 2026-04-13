@@ -7,7 +7,7 @@ const OLLAMA_CLOUD_URL = process.env.OLLAMA_CLOUD_URL || "https://ollama.com";
 const OLLAMA_API_KEY = process.env.OLLAMA_API_KEY;
 const API_KEY = process.env.API_KEY;
 const DEFAULT_MODEL = "glm-5.1:cloud";
-const TIMEOUT_MS = 120000;
+const TIMEOUT_MS = 300000;
 
 // Health check
 app.get("/health", (_req, res) => {
