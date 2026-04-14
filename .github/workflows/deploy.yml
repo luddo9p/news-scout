@@ -30,4 +30,41 @@ jobs:
           VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
         run: |
           sudo apt-get install -y sshpass
-          sshpass -p "$VPS_PASSWORD" ssh -o StrictHostKeyChecking=no -o PreferredAuthentications=password -o PubkeyAuthentication=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "bash /opt/agent-scout/deploy.sh"
+          sshpass -p "$VPS_PASSWORD" ssh -o StrictHostKeyChecking=no -o PreferredAuthentications=password -o PubkeyAuthentication=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} 'bash -s' << 'DEPLOY'
+          set -euo pipefail
+          echo "=== Agent Scout Deploy ==="
+          echo "Starting deployment at $(date)"
+
+          if [ ! -d /opt/agent-scout ]; then
+            echo "First-time setup: cloning repository..."
+            git clone https://github.com/${{ github.repository }}.git /opt/agent-scout
+            cd /opt/agent-scout
+          else
+            cd /opt/agent-scout
+            echo "Pulling latest code..."
+            git pull origin main
+          fi
+
+          echo "Installing dependencies..."
+          npm ci --omit=dev
+
+          echo "Building TypeScript..."
+          npm run build
+
+          echo "Rebuilding and restarting Docker containers..."
+          docker compose up -d --build
+
+          echo "Running health check..."
+          for i in 1 2 3 4 5; do
+            if curl -sf http://localhost:3001/health > /dev/null 2>&1; then
+              echo "Health check passed!"
+              echo "=== Deploy complete at $(date) ==="
+              exit 0
+            fi
+            echo "Waiting for api-bridge... (attempt $i/5)"
+            sleep 3
+          done
+
+          echo "ERROR: Health check failed after 5 attempts"
+          exit 1
+          DEPLOY
