@@ -25,9 +25,14 @@ jobs:
     runs-on: ubuntu-latest
     if: success()
     steps:
-      - name: Deploy via SSH
+      - name: Debug SSH connection
+        env:
+          VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "bash /opt/agent-scout/deploy.sh"
+          echo "Testing SSH connectivity..."
+          sudo apt-get install -y sshpass
+          echo "VPS_HOST length: $(echo -n "${{ secrets.VPS_HOST }}" | wc -c)"
+          echo "VPS_USER length: $(echo -n "${{ secrets.VPS_USER }}" | wc -c)"
+          echo "VPS_PASSWORD length: $(echo -n "$VPS_PASSWORD" | wc -c)"
+          echo "Attempting SSH connection..."
+          sshpass -p "$VPS_PASSWORD" ssh -v -o StrictHostKeyChecking=no -o PreferredAuthentications=password -o PubkeyAuthentication=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "echo 'SSH connection successful'"
