@@ -29,7 +29,7 @@ describe("fetchReddit", () => {
       },
     };
 
-    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
       new Response(JSON.stringify(mockResponse), { status: 200 }),
     );
 
@@ -44,6 +44,10 @@ describe("fetchReddit", () => {
       author: "researcher",
       score: 256,
     });
+    // Verify 24h date filter (t=day) is applied
+    const calledUrl = fetchSpy.mock.calls[0][0] as string;
+    expect(calledUrl).toContain("t=day");
+    expect(calledUrl).not.toContain("t=week");
   });
 
   it("should deduplicate posts across subreddits", async () => {

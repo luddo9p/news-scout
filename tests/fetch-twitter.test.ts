@@ -1,6 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { fetchTwitter } from "../src/fetch-twitter.js";
 
+vi.mock("../src/date-filter.js", () => ({
+  getSinceTimestamp: () => ({
+    iso: "2024-04-13T00:00:00.000Z",
+    unix: 1712966400,
+    date: "2024-04-13",
+  }),
+}));
+
 describe("fetchTwitter", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -17,7 +25,7 @@ describe("fetchTwitter", () => {
       },
     ];
 
-    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
       new Response(JSON.stringify(mockTweets), { status: 200 }),
     );
 
@@ -32,6 +40,10 @@ describe("fetchTwitter", () => {
       author: "techuser",
       score: 150,
     });
+    // Verify 24h date filter (start param) is applied
+    const requestInit = fetchSpy.mock.calls[0][1] as RequestInit;
+    const requestBody = JSON.parse(requestInit.body as string);
+    expect(requestBody).toHaveProperty("start", "2024-04-13");
   });
 
   it("should truncate long tweet text for title", async () => {

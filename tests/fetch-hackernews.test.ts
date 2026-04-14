@@ -1,6 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { fetchHackerNews } from "../src/fetch-hackernews.js";
 
+vi.mock("../src/date-filter.js", () => ({
+  getSinceTimestamp: () => ({
+    iso: "2024-04-13T00:00:00.000Z",
+    unix: 1712966400,
+    date: "2024-04-13",
+  }),
+}));
+
 describe("fetchHackerNews", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -21,7 +29,7 @@ describe("fetchHackerNews", () => {
       ],
     };
 
-    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
       new Response(JSON.stringify(mockResponse), { status: 200 }),
     );
 
@@ -36,6 +44,9 @@ describe("fetchHackerNews", () => {
       author: "pg",
       score: 342,
     });
+    // Verify 24h date filter is applied
+    const calledUrl = fetchSpy.mock.calls[0][0] as string;
+    expect(calledUrl).toContain("numericFilters=created_at_i>");
   });
 
   it("should skip stories without titles", async () => {

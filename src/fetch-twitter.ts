@@ -1,4 +1,5 @@
 import type { SourceResult, ContentItem } from "./types.js";
+import { getSinceTimestamp } from "./date-filter.js";
 
 const APIFY_API_URL =
   "https://api.apify.com/v2/acts/apidojo~tweet-scraper/run-sync-get-dataset-items";
@@ -53,6 +54,7 @@ export async function fetchTwitter(
 
   try {
     const url = `${APIFY_API_URL}?token=${encodeURIComponent(apiKey)}&clean=true`;
+    const { date } = getSinceTimestamp();
 
     const response = await fetch(url, {
       method: "POST",
@@ -62,6 +64,7 @@ export async function fetchTwitter(
         searchTerms,
         maxItems: MAX_ITEMS,
         sort: "Top",
+        start: date,
       }),
     });
 

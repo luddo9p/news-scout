@@ -1,6 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { fetchBluesky } from "../src/fetch-bluesky.js";
 
+vi.mock("../src/date-filter.js", () => ({
+  getSinceTimestamp: () => ({
+    iso: "2024-04-13T00:00:00.000Z",
+    unix: 1712966400,
+    date: "2024-04-13",
+  }),
+}));
+
 describe("fetchBluesky", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -21,7 +29,7 @@ describe("fetchBluesky", () => {
       ],
     };
 
-    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
       new Response(JSON.stringify(mockSearchResponse), { status: 200 }),
     );
 
@@ -35,6 +43,9 @@ describe("fetchBluesky", () => {
       source: "Bluesky",
       author: "User",
     });
+    // Verify 24h date filter (since param) is applied
+    const calledUrl = fetchSpy.mock.calls[0][0] as string;
+    expect(calledUrl).toContain("since=");
   });
 
   it("should authenticate and filter by followers when credentials provided", async () => {

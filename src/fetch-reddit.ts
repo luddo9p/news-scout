@@ -48,7 +48,7 @@ async function fetchSubreddit(
   keywords: string[],
 ): Promise<ContentItem[]> {
   const query = keywords.join(" ");
-  const url = `${REDDIT_BASE}/r/${subreddit}/search.json?q=${encodeURIComponent(query)}&restrict_sr=1&sort=relevance&t=week&limit=${POSTS_PER_SUBREDDIT}`;
+  const url = `${REDDIT_BASE}/r/${subreddit}/search.json?q=${encodeURIComponent(query)}&restrict_sr=1&sort=relevance&t=day&limit=${POSTS_PER_SUBREDDIT}`;
 
   try {
     const controller = new AbortController();

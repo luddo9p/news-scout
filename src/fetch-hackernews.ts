@@ -1,4 +1,5 @@
 import type { SourceResult, ContentItem } from "./types.js";
+import { getSinceTimestamp } from "./date-filter.js";
 
 const HN_API = "https://hn.algolia.com/api/v1/search";
 const TIMEOUT_MS = 5000;
@@ -40,9 +41,10 @@ export async function fetchHackerNews(
 
   try {
     const allItems: ContentItem[] = [];
+    const { unix } = getSinceTimestamp();
 
     for (const query of queries) {
-      const url = `${HN_API}?query=${encodeURIComponent(query)}&tags=story&hitsPerPage=${HITS_PER_PAGE}`;
+      const url = `${HN_API}?query=${encodeURIComponent(query)}&tags=story&hitsPerPage=${HITS_PER_PAGE}&numericFilters=created_at_i>${unix}`;
       const response = await fetch(url, { signal: controller.signal });
 
       if (!response.ok) {

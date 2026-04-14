@@ -1,4 +1,5 @@
 import type { SourceResult, ContentItem } from "./types.js";
+import { getSinceTimestamp } from "./date-filter.js";
 
 const BSKY_PDS = "https://bsky.social";
 const TIMEOUT_MS = 10000;
@@ -134,9 +135,10 @@ export async function fetchBluesky(
     // Search each hashtag separately and merge results
     const allPosts: BlueskyPost[] = [];
     const seenUris = new Set<string>();
+    const { iso } = getSinceTimestamp();
 
     for (const tag of hashtags) {
-      const url = `${BSKY_PDS}/xrpc/app.bsky.feed.searchPosts?q=${encodeURIComponent(tag)}&limit=${SEARCH_LIMIT}&sort=top`;
+      const url = `${BSKY_PDS}/xrpc/app.bsky.feed.searchPosts?q=${encodeURIComponent(tag)}&limit=${SEARCH_LIMIT}&sort=top&since=${encodeURIComponent(iso)}`;
 
       const response = await fetch(url, {
         signal: controller.signal,
