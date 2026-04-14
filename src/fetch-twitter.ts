@@ -54,7 +54,7 @@ export async function fetchTwitter(
 
   try {
     const url = `${APIFY_API_URL}?token=${encodeURIComponent(apiKey)}&clean=true`;
-    const { date } = getSinceTimestamp();
+    const { iso } = getSinceTimestamp();
 
     const response = await fetch(url, {
       method: "POST",
@@ -64,7 +64,6 @@ export async function fetchTwitter(
         searchTerms,
         maxItems: MAX_ITEMS,
         sort: "Top",
-        start: date,
       }),
     });
 
@@ -91,7 +90,11 @@ export async function fetchTwitter(
 
     const items: ContentItem[] = data
       .map(tweetToContentItem)
-      .filter((item): item is ContentItem => item !== null && item.url !== "");
+      .filter((item): item is ContentItem => item !== null && item.url !== "")
+      .filter((item) => {
+        if (!item.date) return true;
+        return new Date(item.date) >= new Date(iso);
+      });
 
     return { source: "X/Twitter", items };
   } catch (err) {

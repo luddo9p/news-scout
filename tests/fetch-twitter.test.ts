@@ -40,10 +40,10 @@ describe("fetchTwitter", () => {
       author: "techuser",
       score: 150,
     });
-    // Verify 24h date filter (start param) is applied
+    // Verify no start param in request body (filtered client-side)
     const requestInit = fetchSpy.mock.calls[0][1] as RequestInit;
     const requestBody = JSON.parse(requestInit.body as string);
-    expect(requestBody).toHaveProperty("start", "2024-04-13");
+    expect(requestBody).not.toHaveProperty("start");
   });
 
   it("should truncate long tweet text for title", async () => {
@@ -75,7 +75,7 @@ describe("fetchTwitter", () => {
         text: "Test tweet",
         author: { userName: "user3" },
         likeCount: 5,
-        createdAt: "Fri Nov 24 17:49:36 +0000 2023",
+        createdAt: "Sat Apr 13 17:49:36 +0000 2024", // after the mocked since date
       },
     ];
 
@@ -85,7 +85,7 @@ describe("fetchTwitter", () => {
 
     const result = await fetchTwitter(["vibe coding"], "fake-apify-key");
 
-    expect(result.items[0].date).toContain("2023-11-24");
+    expect(result.items[0].date).toContain("2024-04-13");
   });
 
   it("should return error when Apify API fails", async () => {
@@ -127,5 +127,33 @@ describe("fetchTwitter", () => {
 
     expect(result.items).toHaveLength(1);
     expect(result.items[0].title).toBe("Valid tweet");
+  });
+
+  it("should filter out tweets older than 24 hours", async () => {
+    const mockTweets = [
+      {
+        url: "https://x.com/user/status/1",
+        text: "Recent tweet",
+        author: { userName: "user1" },
+        likeCount: 10,
+        createdAt: "Fri Apr 12 10:00:00 +0000 2024", // before since date (Apr 13)
+      },
+      {
+        url: "https://x.com/user/status/2",
+        text: "Fresh tweet",
+        author: { userName: "user2" },
+        likeCount: 20,
+        createdAt: "Sat Apr 13 12:00:00 +0000 2024", // after since date
+      },
+    ];
+
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(JSON.stringify(mockTweets), { status: 200 }),
+    );
+
+    const result = await fetchTwitter(["test"], "fake-key");
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].title).toBe("Fresh tweet");
   });
 });
