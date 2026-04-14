@@ -46,7 +46,7 @@ jobs:
           fi
 
           echo "Installing dependencies..."
-          npm ci --omit=dev
+          npm ci
 
           echo "Building TypeScript..."
           npm run build
