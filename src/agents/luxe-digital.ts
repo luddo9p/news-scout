@@ -1,5 +1,4 @@
 import { fetchReddit } from "../sources/fetch-reddit.js";
-import { fetchTwitter } from "../sources/fetch-twitter.js";
 import { fetchRss } from "../sources/fetch-rss.js";
 import type { AgentConfig } from "../shared/types.js";
 
@@ -16,13 +15,6 @@ const REDDIT_KEYWORDS = [
   "digital activation",
   "AI agent",
   "brand experience",
-];
-const TWITTER_SEARCH_TERMS = [
-  "#DigitalActivation",
-  "#LuxuryTech",
-  "#ARfilter",
-  "#LuxuryMarketing",
-  "#RetailTech",
 ];
 const RSS_FEEDS = [
   {
@@ -73,13 +65,11 @@ export const LUXE_DIGITAL_CONFIG: AgentConfig = {
   sources: [
     () => fetchRss(RSS_FEEDS),
     () => fetchReddit(REDDIT_SUBREDDITS, REDDIT_KEYWORDS),
-    () =>
-      fetchTwitter(TWITTER_SEARCH_TERMS, process.env.APIFY_API_KEY || ""),
   ],
   systemPrompt: SYSTEM_PROMPT,
   emailBranding: {
     title: "Luxe Digital Scout",
     subjectPrefix: "Luxe Digital",
-    footerSources: "Luxury Daily · Luxury Roundtable · Reddit · X/Twitter",
+    footerSources: "Luxury Daily · Luxury Roundtable · Reddit",
   },
 };

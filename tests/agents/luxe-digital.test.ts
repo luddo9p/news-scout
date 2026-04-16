@@ -7,7 +7,7 @@ describe("LUXE_DIGITAL_CONFIG", () => {
   });
 
   it("should define source fetchers", () => {
-    expect(LUXE_DIGITAL_CONFIG.sources.length).toBeGreaterThanOrEqual(3);
+    expect(LUXE_DIGITAL_CONFIG.sources.length).toBeGreaterThanOrEqual(2);
   });
 
   it("should have systemPrompt with luxury-digital sections", () => {
