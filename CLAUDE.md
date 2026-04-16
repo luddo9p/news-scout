@@ -94,7 +94,7 @@ Optional: `API_KEY` (VPS auth), `RESEND_FROM` (default: `onboarding@resend.dev`)
 - **API Bridge**: http://46.225.59.42:3001
 - **Health check**: `curl http://46.225.59.42:3001/health`
 - **SSH**: `ssh root@46.225.59.42`
-- **API Key**: `Set in API_KEY env var`
+- **API Key**: Set in `API_KEY` env var
 
 ## Deployment
 
