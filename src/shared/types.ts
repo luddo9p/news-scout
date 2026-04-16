@@ -1,4 +1,4 @@
-// src/types.ts
+// src/shared/types.ts
 
 /** Result from a single data source */
 export interface SourceResult {
@@ -25,4 +25,19 @@ export interface ScoutResult {
   sourcesFailed: number;
   emailSent: boolean;
   errors: string[];
+}
+
+/** Email branding configuration per agent */
+export interface EmailBranding {
+  title: string;
+  subjectPrefix: string;
+  footerSources: string;
+}
+
+/** Agent configuration — defines sources, prompts, and branding */
+export interface AgentConfig {
+  name: string;
+  sources: (() => Promise<SourceResult>)[];
+  systemPrompt: string;
+  emailBranding: EmailBranding;
 }

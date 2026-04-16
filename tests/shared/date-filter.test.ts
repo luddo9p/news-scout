@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { getSinceTimestamp } from "../src/date-filter.js";
+import { getSinceTimestamp } from "../../src/shared/date-filter.js";
 
 describe("getSinceTimestamp", () => {
   it("should return iso, unix, and date properties", () => {

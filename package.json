@@ -3,13 +3,20 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline.sh",
+    "padding": 2
+  },
   "scripts": {
     "build": "tsc",
-    "start": "tsx --env-file=.env src/scout.ts",
+    "start": "tsx --env-file=.env src/index.ts --agent=tech-ai",
+    "start:luxe": "tsx --env-file=.env src/index.ts --agent=luxe-digital",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
+    "fast-xml-parser": "^5.6.0",
     "resend": "^4.0.0"
   },
   "devDependencies": {
