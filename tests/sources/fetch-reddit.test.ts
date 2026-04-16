@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { fetchReddit } from "../src/fetch-reddit.js";
+import { fetchReddit } from "../../src/sources/fetch-reddit.js";
 
 describe("fetchReddit", () => {
   beforeEach(() => {

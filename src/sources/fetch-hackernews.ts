@@ -1,5 +1,5 @@
-import type { SourceResult, ContentItem } from "./shared/types.js";
-import { getSinceTimestamp } from "./shared/date-filter.js";
+import type { SourceResult, ContentItem } from "../shared/types.js";
+import { getSinceTimestamp } from "../shared/date-filter.js";
 
 const HN_API = "https://hn.algolia.com/api/v1/search";
 const TIMEOUT_MS = 5000;

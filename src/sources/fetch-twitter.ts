@@ -1,5 +1,5 @@
-import type { SourceResult, ContentItem } from "./shared/types.js";
-import { getSinceTimestamp } from "./shared/date-filter.js";
+import type { SourceResult, ContentItem } from "../shared/types.js";
+import { getSinceTimestamp } from "../shared/date-filter.js";
 
 const APIFY_API_URL =
   "https://api.apify.com/v2/acts/apidojo~tweet-scraper/run-sync-get-dataset-items";

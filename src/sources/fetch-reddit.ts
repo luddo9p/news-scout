@@ -1,4 +1,4 @@
-import type { SourceResult, ContentItem } from "./shared/types.js";
+import type { SourceResult, ContentItem } from "../shared/types.js";
 
 const REDDIT_BASE = "https://www.reddit.com";
 const TIMEOUT_MS = 10000;
