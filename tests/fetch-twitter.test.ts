@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { fetchTwitter } from "../src/fetch-twitter.js";
 
-vi.mock("../src/date-filter.js", () => ({
+vi.mock("../src/shared/date-filter.js", () => ({
   getSinceTimestamp: () => ({
     iso: "2024-04-13T00:00:00.000Z",
     unix: 1712966400,

@@ -1,5 +1,5 @@
 import type { SourceResult, ContentItem } from "./shared/types.js";
-import { getSinceTimestamp } from "./date-filter.js";
+import { getSinceTimestamp } from "./shared/date-filter.js";
 
 const BSKY_PDS = "https://bsky.social";
 const TIMEOUT_MS = 10000;
