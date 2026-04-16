@@ -1,7 +1,7 @@
-import type { SourceResult } from "./types.js";
+import type { SourceResult } from "./shared/types.js";
 
 const DEFAULT_MODEL = "glm-5.1:cloud";
-const TIMEOUT_MS = 120000;
+const TIMEOUT_MS = 300000;
 const MAX_ITEMS_PER_SOURCE = 5;
 const MAX_SUMMARY_LENGTH = 100;
 

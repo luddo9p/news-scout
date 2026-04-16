@@ -4,7 +4,7 @@ import { fetchReddit } from "./fetch-reddit.js";
 import { fetchTwitter } from "./fetch-twitter.js";
 import { synthesize } from "./synthesize.js";
 import { buildEmailHtml, sendEmail, EMAIL_SUBJECT } from "./send-email.js";
-import type { ScoutResult, SourceResult } from "./types.js";
+import type { ScoutResult, SourceResult } from "./shared/types.js";
 
 const BLUESKY_HASHTAGS = [
   "#vibecoding",

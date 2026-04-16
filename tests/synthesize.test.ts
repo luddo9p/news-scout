@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { buildPrompt, synthesize } from "../src/synthesize.js";
-import type { SourceResult } from "../src/types.js";
+import type { SourceResult } from "../src/shared/types.js";
 
 describe("buildPrompt", () => {
   it("should build a prompt with all source content", () => {

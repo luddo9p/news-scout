@@ -1,4 +1,4 @@
-import type { SourceResult, ContentItem } from "./types.js";
+import type { SourceResult, ContentItem } from "./shared/types.js";
 import { getSinceTimestamp } from "./date-filter.js";
 
 const HN_API = "https://hn.algolia.com/api/v1/search";

@@ -1,4 +1,4 @@
-import type { SourceResult, ContentItem } from "./types.js";
+import type { SourceResult, ContentItem } from "./shared/types.js";
 import { getSinceTimestamp } from "./date-filter.js";
 
 const APIFY_API_URL =
