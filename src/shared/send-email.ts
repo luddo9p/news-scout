@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import type { EmailBranding } from "./types.js";
 
 interface SendEmailParams {
   htmlContent: string;
@@ -14,17 +15,21 @@ interface SendEmailResult {
   error?: string;
 }
 
-const EMAIL_SUBJECT = (date: Date): string => {
+export function makeEmailSubject(date: Date, branding: EmailBranding): string {
   const formatted = date.toLocaleDateString("fr-FR", {
     weekday: "long",
     year: "numeric",
     month: "long",
     day: "numeric",
   });
-  return `Agent Scout — Veille du ${formatted}`;
-};
+  return `${branding.subjectPrefix} — Veille du ${formatted}`;
+}
 
-export function buildEmailHtml(content: string, date: Date): string {
+export function buildEmailHtml(
+  content: string,
+  date: Date,
+  branding: EmailBranding,
+): string {
   const formattedDate = date.toLocaleDateString("fr-FR", {
     weekday: "long",
     year: "numeric",
@@ -49,7 +54,7 @@ export function buildEmailHtml(content: string, date: Date): string {
           <tr>
             <td style="padding:0 24px;">
               <h1 style="margin:0;font-size:28px;font-weight:700;letter-spacing:-0.5px;color:#1c1c1e;">
-                Agent Scout
+                ${branding.title}
               </h1>
               <p style="margin:6px 0 0;font-size:15px;font-weight:400;color:#8e8e93;">
                 ${formattedDate}
@@ -73,8 +78,8 @@ export function buildEmailHtml(content: string, date: Date): string {
     <tr>
       <td style="padding:24px 24px 40px;text-align:center;">
         <p style="margin:0;font-size:12px;color:#8e8e93;line-height:1.5;">
-          Généré automatiquement par Agent Scout<br>
-          Sources : Bluesky &bull; Hacker News &bull; Reddit &bull; X/Twitter
+          Généré automatiquement par ${branding.title}<br>
+          Sources : ${branding.footerSources}
         </p>
       </td>
     </tr>
@@ -110,5 +115,3 @@ export async function sendEmail(
     };
   }
 }
-
-export { EMAIL_SUBJECT };
