@@ -10,7 +10,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "start": "tsx --env-file=.env src/scout.ts",
+    "start": "tsx --env-file=.env src/index.ts --agent=tech-ai",
+    "start:luxe": "tsx --env-file=.env src/index.ts --agent=luxe-digital",
     "test": "vitest run",
     "test:watch": "vitest"
   },

@@ -31,7 +31,7 @@ const RSS_FEEDS = [
   },
   {
     url: "https://luxuryroundtable.com/rss-feed/research/advertising-marketing/",
-    label: "Luxury Daily",
+    label: "Luxury Roundtable",
   },
 ];
 
