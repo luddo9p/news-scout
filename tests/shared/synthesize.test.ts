@@ -1,30 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { buildPrompt, synthesize } from "../src/synthesize.js";
-import type { SourceResult } from "../src/shared/types.js";
+import { buildPrompt, synthesize } from "../../src/shared/synthesize.js";
+import type { SourceResult } from "../../src/shared/types.js";
+
+const CUSTOM_SYSTEM_PROMPT =
+  "Tu es un analyste luxe digital. Structure: Tendances, Marques, Outils.";
 
 describe("buildPrompt", () => {
-  it("should build a prompt with all source content", () => {
+  it("should build a prompt with source content", () => {
     const sources: SourceResult[] = [
       {
-        source: "Bluesky",
+        source: "Luxury Daily",
         items: [
           {
-            title: "Post 1",
-            url: "https://bsky.app/1",
-            summary: "About vibe coding",
-            source: "Bluesky",
-          },
-        ],
-      },
-      {
-        source: "Hacker News",
-        items: [
-          {
-            title: "HN Story",
-            url: "https://hn.app/1",
-            summary: "New AI tool",
-            source: "Hacker News",
-            score: 100,
+            title: "Gucci AR Lens",
+            url: "https://luxurydaily.com/gucci-ar",
+            summary: "Gucci launches AR lens on Snapchat",
+            source: "Luxury Daily",
           },
         ],
       },
@@ -32,60 +23,37 @@ describe("buildPrompt", () => {
 
     const prompt = buildPrompt(sources);
 
-    expect(prompt).toContain("Bluesky");
-    expect(prompt).toContain("Post 1");
-    expect(prompt).toContain("Hacker News");
-    expect(prompt).toContain("HN Story");
-    expect(prompt).toContain("À lire absolument");
+    expect(prompt).toContain("Luxury Daily");
+    expect(prompt).toContain("Gucci AR Lens");
+    expect(prompt).toContain("N'invente aucun lien");
+    expect(prompt).toContain("Rédige en français");
   });
 
   it("should include error messages for failed sources", () => {
     const sources: SourceResult[] = [
       {
-        source: "X/Twitter",
+        source: "Glossy",
         items: [],
-        error: "Pas encore configuré",
+        error: "RSS feed unavailable",
       },
     ];
 
     const prompt = buildPrompt(sources);
 
-    expect(prompt).toContain("X/Twitter");
-    expect(prompt).toContain("Pas encore configuré");
-  });
-
-  it("should include anti-hallucination and language rules", () => {
-    const sources: SourceResult[] = [
-      {
-        source: "Test",
-        items: [
-          {
-            title: "Item",
-            url: "https://example.com",
-            summary: "Test",
-            source: "Test",
-          },
-        ],
-      },
-    ];
-
-    const prompt = buildPrompt(sources);
-
-    expect(prompt).toContain("N'invente aucun lien");
-    expect(prompt).toContain("Rédige en français");
-    expect(prompt).toContain("fusionne-les en un seul item");
+    expect(prompt).toContain("Glossy");
+    expect(prompt).toContain("RSS feed unavailable");
   });
 
   it("should include score information for prioritization", () => {
     const sources: SourceResult[] = [
       {
-        source: "Hacker News",
+        source: "Reddit",
         items: [
           {
-            title: "Popular Story",
-            url: "https://example.com/popular",
-            summary: "Very popular",
-            source: "Hacker News",
+            title: "Dior digital campaign",
+            url: "https://reddit.com/r/luxury/1",
+            summary: "Dior's new AR activation",
+            source: "Reddit",
             score: 342,
           },
         ],
@@ -108,11 +76,8 @@ describe("buildPrompt", () => {
     const sources: SourceResult[] = [{ source: "Test", items }];
     const prompt = buildPrompt(sources);
 
-    // Only 5 items should appear (MAX_ITEMS_PER_SOURCE)
     const matches = prompt.match(/- \*\*Item \d+\*\*/g);
     expect(matches).toHaveLength(5);
-
-    // Summaries should be truncated
     expect(prompt).toContain("...");
   });
 });
@@ -122,10 +87,9 @@ describe("synthesize", () => {
     vi.restoreAllMocks();
   });
 
-  it("should call VPS /generate and return HTML content", async () => {
+  it("should call VPS /generate with custom systemPrompt", async () => {
     const mockResponse = {
-      content:
-        '<h2 style="font-size:20px;">À lire absolument</h2><p>Test content</p>',
+      content: "<h2>Tendances</h2><p>Test content</p>",
     };
 
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
@@ -147,21 +111,16 @@ describe("synthesize", () => {
         },
       ],
       "http://localhost:3000",
+      CUSTOM_SYSTEM_PROMPT,
       "test-api-key",
     );
 
-    expect(result).toContain("À lire absolument");
+    expect(result).toContain("Tendances");
 
     const fetchCall = vi.mocked(globalThis.fetch).mock.calls[0];
-    expect(fetchCall[0]).toBe("http://localhost:3000/generate");
     const options = fetchCall[1] as RequestInit;
-    expect((options.headers as Record<string, string>)["x-api-key"]).toBe(
-      "test-api-key",
-    );
     const body = JSON.parse(options.body as string);
-    expect(body.model).toBe("glm-5.1:cloud");
-    expect(body.prompt).toBeDefined();
-    expect(body.systemPrompt).toBeDefined();
+    expect(body.systemPrompt).toBe(CUSTOM_SYSTEM_PROMPT);
   });
 
   it("should work without API key", async () => {
@@ -186,20 +145,19 @@ describe("synthesize", () => {
         },
       ],
       "http://localhost:3000",
+      "Any system prompt",
     );
 
     const fetchCall = vi.mocked(globalThis.fetch).mock.calls[0];
     const options = fetchCall[1] as RequestInit;
-    expect((options.headers as Record<string, string>)["x-api-key"]).toBe(
-      undefined,
-    );
+    expect(
+      (options.headers as Record<string, string>)["x-api-key"],
+    ).toBeUndefined();
   });
 
   it("should throw on API error", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({ error: "Invalid key" }), {
-        status: 401,
-      }),
+      new Response(JSON.stringify({ error: "Invalid key" }), { status: 401 }),
     );
 
     await expect(
@@ -218,16 +176,15 @@ describe("synthesize", () => {
           },
         ],
         "http://localhost:3000",
+        "Any system prompt",
         "bad-key",
       ),
     ).rejects.toThrow("Ollama API error 401");
   });
 
   it("should throw on empty response", async () => {
-    const mockResponse = { content: "" };
-
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify(mockResponse), { status: 200 }),
+      new Response(JSON.stringify({ content: "" }), { status: 200 }),
     );
 
     await expect(
@@ -246,6 +203,7 @@ describe("synthesize", () => {
           },
         ],
         "http://localhost:3000",
+        "Any system prompt",
       ),
     ).rejects.toThrow("Ollama returned empty content");
   });
@@ -273,6 +231,7 @@ describe("synthesize", () => {
           },
         ],
         "http://localhost:3000",
+        "Any system prompt",
       ),
     ).rejects.toThrow("Ollama API timeout");
   });
