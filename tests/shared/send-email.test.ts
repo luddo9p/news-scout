@@ -4,6 +4,7 @@ import {
   makeEmailSubject,
 } from "../../src/shared/send-email.js";
 import type { EmailBranding } from "../../src/shared/types.js";
+import type { SynthesisData } from "../../src/shared/synthesis-schema.js";
 
 vi.mock("resend", () => ({
   Resend: vi.fn().mockImplementation(() => ({
@@ -29,33 +30,50 @@ const LUXE_BRANDING: EmailBranding = {
   footerSources: "Luxury Daily · Reddit · X/Twitter · RSS",
 };
 
+const SAMPLE_DATA: SynthesisData = {
+  sections: [
+    {
+      title: "À lire absolument",
+      type: "standard",
+      items: [
+        {
+          title: "Test Article",
+          url: "https://example.com/test",
+          context: "Un article important",
+          source: "Hacker News",
+        },
+      ],
+    },
+  ],
+};
+
 describe("buildEmailHtml", () => {
   it("should use custom branding title", () => {
-    const content = "<h2>Tendances</h2><p>Test item</p>";
     const html = buildEmailHtml(
-      content,
+      SAMPLE_DATA,
       new Date("2024-12-01T10:00:00Z"),
       LUXE_BRANDING,
     );
-
     expect(html).toContain("<!DOCTYPE html>");
     expect(html).toContain("Luxe Digital Scout");
     expect(html).not.toContain("Agent Scout");
   });
 
   it("should use custom footer sources", () => {
-    const content = "<p>Test</p>";
-    const html = buildEmailHtml(content, new Date(), LUXE_BRANDING);
-
+    const html = buildEmailHtml(SAMPLE_DATA, new Date(), LUXE_BRANDING);
     expect(html).toContain("Luxury Daily · Reddit · X/Twitter · RSS");
   });
 
   it("should work with original scout branding", () => {
-    const content = "<p>Test</p>";
-    const html = buildEmailHtml(content, new Date(), SCOUT_BRANDING);
-
+    const html = buildEmailHtml(SAMPLE_DATA, new Date(), SCOUT_BRANDING);
     expect(html).toContain("Agent Scout");
     expect(html).toContain("Bluesky · Hacker News · Reddit · X/Twitter");
+  });
+
+  it("should render synthesis data inside email template", () => {
+    const html = buildEmailHtml(SAMPLE_DATA, new Date(), SCOUT_BRANDING);
+    expect(html).toContain("Test Article");
+    expect(html).toContain("https://example.com/test");
   });
 });
 
@@ -65,7 +83,6 @@ describe("makeEmailSubject", () => {
       new Date("2024-12-01T10:00:00Z"),
       LUXE_BRANDING,
     );
-
     expect(subject).toContain("Luxe Digital");
     expect(subject).toContain("Veille du");
   });
@@ -75,7 +92,6 @@ describe("makeEmailSubject", () => {
       new Date("2024-12-01T10:00:00Z"),
       SCOUT_BRANDING,
     );
-
     expect(subject).toContain("Agent Scout");
   });
 });
@@ -89,7 +105,6 @@ describe("sendEmail", () => {
       to: "test@example.com",
       apiKey: "re_test_key",
     });
-
     expect(result.success).toBe(true);
     expect(result.id).toBe("email-123");
   });

@@ -57,9 +57,9 @@ export async function runAgent(config: AgentConfig): Promise<ScoutResult> {
     };
   }
 
-  let htmlContent: string;
+  let synthesisData;
   try {
-    htmlContent = await synthesize(
+    synthesisData = await synthesize(
       sources,
       vpsUrl,
       config.systemPrompt,
@@ -82,7 +82,7 @@ export async function runAgent(config: AgentConfig): Promise<ScoutResult> {
   console.log(`[${config.emailBranding.title}] Sending email via Resend...`);
   const now = new Date();
   const subject = makeEmailSubject(now, config.emailBranding);
-  const emailHtml = buildEmailHtml(htmlContent, now, config.emailBranding);
+  const emailHtml = buildEmailHtml(synthesisData, now, config.emailBranding);
 
   const resendApiKey = process.env.RESEND_API_KEY;
   const resendFrom = process.env.RESEND_FROM || "onboarding@resend.dev";

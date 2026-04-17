@@ -1,5 +1,7 @@
 import { Resend } from "resend";
 import type { EmailBranding } from "./types.js";
+import type { SynthesisData } from "./synthesis-schema.js";
+import { renderSections } from "./render.js";
 
 interface SendEmailParams {
   htmlContent: string;
@@ -26,7 +28,7 @@ export function makeEmailSubject(date: Date, branding: EmailBranding): string {
 }
 
 export function buildEmailHtml(
-  content: string,
+  data: SynthesisData,
   date: Date,
   branding: EmailBranding,
 ): string {
@@ -39,6 +41,8 @@ export function buildEmailHtml(
     minute: "2-digit",
     timeZone: "Europe/Paris",
   });
+
+  const content = renderSections(data);
 
   return `<!DOCTYPE html>
 <html lang="fr">
