@@ -1,19 +1,20 @@
+import { fetchBluesky } from "../sources/fetch-bluesky.js";
 import { fetchReddit } from "../sources/fetch-reddit.js";
 import { fetchRss } from "../sources/fetch-rss.js";
+import { fetchTwitter } from "../sources/fetch-twitter.js";
 import type { AgentConfig } from "../shared/types.js";
 
 const REDDIT_SUBREDDITS = [
-  "marketing",
-  "digital_marketing",
   "luxury",
+  "fashionbusiness",
   "augmentedReality",
-  "ArtificialIntelligence",
+  "digital_marketing",
 ];
 const REDDIT_KEYWORDS = [
   "luxury digital",
-  "AR filter",
+  "AR filter luxury",
   "digital activation",
-  "AI agent",
+  "AI agent luxury",
   "brand experience",
 ];
 const RSS_FEEDS = [
@@ -25,6 +26,34 @@ const RSS_FEEDS = [
     url: "https://luxuryroundtable.com/rss-feed/research/advertising-marketing/",
     label: "Luxury Roundtable",
   },
+  {
+    url: "https://jingdaily.com/feed/",
+    label: "Jing Daily",
+  },
+  {
+    url: "https://www.glossy.co/feed/",
+    label: "Glossy",
+  },
+  {
+    url: "https://www.voguebusiness.com/rss",
+    label: "Vogue Business",
+  },
+  {
+    url: "https://www.retailasia.com/rss",
+    label: "Retail Asia",
+  },
+];
+const BLUESKY_HASHTAGS = [
+  "#LuxuryTech",
+  "#LuxuryMarketing",
+  "#ARfilter",
+  "#LuxuryDigital",
+];
+const TWITTER_SEARCH_TERMS = [
+  "luxury digital activation",
+  "AR filter luxury brand",
+  "luxury AI agent",
+  "digital luxury marketing",
 ];
 
 const SYSTEM_PROMPT = `Tu es Luxe Digital Scout, un analyste spécialisé dans les activations digitales et le marketing du luxe. Tu synthétises des contenus en JSON structuré.
@@ -75,11 +104,20 @@ export const LUXE_DIGITAL_CONFIG: AgentConfig = {
   sources: [
     () => fetchRss(RSS_FEEDS),
     () => fetchReddit(REDDIT_SUBREDDITS, REDDIT_KEYWORDS),
+    () =>
+      fetchBluesky(
+        BLUESKY_HASHTAGS,
+        process.env.BLUESKY_HANDLE,
+        process.env.BLUESKY_APP_PASSWORD,
+      ),
+    () =>
+      fetchTwitter(TWITTER_SEARCH_TERMS, process.env.APIFY_API_KEY || ""),
   ],
   systemPrompt: SYSTEM_PROMPT,
   emailBranding: {
     title: "Luxe Digital Scout",
     subjectPrefix: "Luxe Digital",
-    footerSources: "Luxury Daily · Luxury Roundtable · Reddit",
+    footerSources:
+      "Jing Daily · Glossy · Vogue Business · Retail Asia · Luxury Daily · Reddit · Bluesky · X/Twitter",
   },
 };
