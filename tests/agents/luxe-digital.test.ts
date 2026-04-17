@@ -12,7 +12,7 @@ describe("LUXE_DIGITAL_CONFIG", () => {
 
   it("should have systemPrompt with luxury-digital sections", () => {
     expect(LUXE_DIGITAL_CONFIG.systemPrompt).toContain("Activations Digitales");
-    expect(LUXE_DIGITAL_CONFIG.systemPrompt).toContain("Outils");
+    expect(LUXE_DIGITAL_CONFIG.systemPrompt).toContain("Innovations Luxe");
     expect(LUXE_DIGITAL_CONFIG.systemPrompt).toContain("Tendances");
   });
 

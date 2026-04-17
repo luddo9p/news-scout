@@ -8,14 +8,12 @@ const REDDIT_SUBREDDITS = [
   "luxury",
   "fashionbusiness",
   "augmentedReality",
-  "digital_marketing",
 ];
 const REDDIT_KEYWORDS = [
-  "luxury digital",
+  "luxury brand",
   "AR filter luxury",
-  "digital activation",
-  "AI agent luxury",
-  "brand experience",
+  "luxury digital",
+  "luxury experience",
 ];
 const RSS_FEEDS = [
   {
@@ -31,38 +29,31 @@ const RSS_FEEDS = [
     label: "Jing Daily",
   },
   {
-    url: "https://www.glossy.co/feed/",
-    label: "Glossy",
-  },
-  {
     url: "https://www.voguebusiness.com/rss",
     label: "Vogue Business",
-  },
-  {
-    url: "https://www.retailasia.com/rss",
-    label: "Retail Asia",
   },
 ];
 const BLUESKY_HASHTAGS = [
   "#LuxuryTech",
-  "#LuxuryMarketing",
-  "#ARfilter",
   "#LuxuryDigital",
+  "#ARfilter",
+  "#LuxuryBrand",
 ];
 const TWITTER_SEARCH_TERMS = [
-  "luxury digital activation",
+  "luxury brand digital",
   "AR filter luxury brand",
-  "luxury AI agent",
-  "digital luxury marketing",
+  "luxury experience immersive",
+  "luxury AI personalization",
 ];
 
-const SYSTEM_PROMPT = `Tu es Luxe Digital Scout, un analyste spécialisé dans les activations digitales et le marketing du luxe. Tu synthétises des contenus en JSON structuré.
+const SYSTEM_PROMPT = `Tu es Luxe Digital Scout, un analyste spécialisé dans les marques de luxe et leurs activations digitales. Tu synthétises des contenus en JSON structuré.
 
 Règles :
 - Rédige toujours en français. Traduis les titres anglais si nécessaire, mais conserve les liens originaux.
 - N'invente JAMAIS de liens. Utilise uniquement les URLs fournis dans les contenus source.
 - Si plusieurs sources parlent du même sujet, fusionne-les en un seul item.
-- Priorise les contenus liés aux activations digitales, filtres AR, agents IA pour le luxe, et opérations marketing digital des marques premium.
+- Concentre-toi UNIQUEMENT sur le luxe : marques premium, maisons de mode, horlogerie, joaillerie, parfumerie, hôtellerie de luxe, art de vivre. Ignore le marketing digital générique.
+- Priorise les activations digitales, filtres AR, expériences immersives, personnalisation IA et e-commerce luxe.
 
 Retourne UNIQUEMENT du JSON valide (pas de markdown, pas de texte avant/après).
 
@@ -93,9 +84,9 @@ Section type "trend" — items : { title, context, citations: [{ text, source, u
 - citations : sources qui illustrent cette tendance
 
 3 sections obligatoires :
-1. "Activations Digitales" (type: "standard") — Campagnes, activations, expériences immersives (AR, VR, pop-ups digitaux) des marques luxe et premium.
-2. "Outils & Innovations" (type: "standard") — Nouveaux outils, plateformes, filtres AR, agents IA, technologies du secteur luxe/marketing digital.
-3. "Tendances" (type: "trend") — Tendances émergentes du marketing digital luxe, patterns récurrents. Chaque tendance DOIT citer ses sources.
+1. "Activations Digitales" (type: "standard") — Campagnes digitales, activations, expériences immersives (AR, VR, pop-ups digitaux) des maisons de luxe.
+2. "Innovations Luxe" (type: "standard") — Filtres AR, personnalisation IA, e-commerce luxe, nouveaux outils digitaux pour les marques premium.
+3. "Tendances" (type: "trend") — Tendances émergentes du digital dans le luxe, évolutions du marché. Chaque tendance DOIT citer ses sources.
 
 Si une section n'a pas de contenu pertinent, mets items: [].`;
 
@@ -118,6 +109,6 @@ export const LUXE_DIGITAL_CONFIG: AgentConfig = {
     title: "Luxe Digital Scout",
     subjectPrefix: "Luxe Digital",
     footerSources:
-      "Jing Daily · Glossy · Vogue Business · Retail Asia · Luxury Daily · Reddit · Bluesky · X/Twitter",
+      "Jing Daily · Vogue Business · Luxury Daily · Reddit · Bluesky · X/Twitter",
   },
 };
