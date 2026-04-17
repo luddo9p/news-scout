@@ -7,12 +7,15 @@ const REDDIT_SUBREDDITS = [
   "luxury",
   "fashionbusiness",
   "augmentedReality",
+  "Watches",
+  "Fragrance",
 ];
 const REDDIT_KEYWORDS = [
-  "luxury brand",
-  "AR filter luxury",
-  "luxury digital",
-  "luxury experience",
+  "digital",
+  "AR filter",
+  "AI",
+  "e-commerce",
+  "experience",
 ];
 const RSS_FEEDS = [
   {
@@ -33,16 +36,11 @@ const RSS_FEEDS = [
   },
 ];
 const BLUESKY_HASHTAGS = [
-  "#LuxuryTech",
-  "#LuxuryDigital",
-  "#ARfilter",
-  "#LuxuryBrand",
-];
-const TWITTER_SEARCH_TERMS = [
-  "luxury brand digital",
-  "AR filter luxury brand",
-  "luxury experience immersive",
-  "luxury AI personalization",
+  "#Luxury",
+  "#DigitalLuxury",
+  "#LuxuryAR",
+  "#Maison",
+  "#LuxeDigital",
 ];
 
 const SYSTEM_PROMPT = `Tu es Luxe Digital Scout, un analyste spécialisé dans les marques de luxe et leurs activations digitales. Tu synthétises des contenus en JSON structuré.
