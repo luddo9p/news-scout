@@ -12,6 +12,23 @@ vi.mock("resend", () => ({
   })),
 }));
 
+const VALID_JSON = JSON.stringify({
+  sections: [
+    {
+      title: "À lire absolument",
+      type: "standard",
+      items: [
+        {
+          title: "Test Article",
+          url: "https://example.com/test",
+          context: "Important article",
+          source: "Hacker News",
+        },
+      ],
+    },
+  ],
+});
+
 const MOCK_CONFIG: AgentConfig = {
   name: "test-agent",
   sources: [
@@ -61,10 +78,8 @@ describe("runAgent", () => {
   });
 
   it("should call synthesize with the agent's systemPrompt", async () => {
-    const mockHtml =
-      '<h2 style="font-size:20px;">Test Section</h2><p>Content</p>';
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({ content: mockHtml }), { status: 200 }),
+      new Response(JSON.stringify({ content: VALID_JSON }), { status: 200 }),
     );
 
     const result = await runAgent(MOCK_CONFIG);
@@ -98,9 +113,8 @@ describe("runAgent", () => {
   it("should return error when RESEND_API_KEY is missing", async () => {
     delete process.env.RESEND_API_KEY;
 
-    const mockHtml = "<h2>Test</h2>";
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({ content: mockHtml }), { status: 200 }),
+      new Response(JSON.stringify({ content: VALID_JSON }), { status: 200 }),
     );
 
     const result = await runAgent(MOCK_CONFIG);
@@ -131,9 +145,8 @@ describe("runAgent", () => {
       ],
     };
 
-    const mockHtml = "<h2>Test</h2>";
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({ content: mockHtml }), { status: 200 }),
+      new Response(JSON.stringify({ content: VALID_JSON }), { status: 200 }),
     );
 
     const result = await runAgent(failingConfig);
@@ -145,10 +158,8 @@ describe("runAgent", () => {
   });
 
   it("should succeed on happy path", async () => {
-    const mockHtml =
-      '<h2 style="font-size:20px;">À lire absolument</h2><ul><li>Test</li></ul>';
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify({ content: mockHtml }), { status: 200 }),
+      new Response(JSON.stringify({ content: VALID_JSON }), { status: 200 }),
     );
 
     const result = await runAgent(MOCK_CONFIG);
