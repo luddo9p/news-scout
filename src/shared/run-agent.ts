@@ -27,6 +27,13 @@ export async function runAgent(config: AgentConfig): Promise<ScoutResult> {
   console.log(
     `[${config.emailBranding.title}] Fetched: ${sourcesFetched} success, ${sourcesFailed} failed in ${Date.now() - startTime}ms`,
   );
+  for (const s of sources) {
+    if (s.error) {
+      console.log(`  [${config.emailBranding.title}] ❌ ${s.source}: ${s.error}`);
+    } else {
+      console.log(`  [${config.emailBranding.title}] ✅ ${s.source}: ${s.items.length} items`);
+    }
+  }
 
   // 2. Check if we have any content
   const totalItems = sources.reduce((sum, s) => sum + s.items.length, 0);
