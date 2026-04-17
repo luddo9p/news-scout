@@ -32,13 +32,9 @@ export const SectionSchema = z
   .refine(
     (section) => {
       if (section.type === "standard") {
-        return section.items.every(
-          (item) => StandardItemSchema.safeParse(item).success,
-        );
+        return section.items.every((item) => "url" in item && "source" in item);
       }
-      return section.items.every(
-        (item) => TrendItemSchema.safeParse(item).success,
-      );
+      return section.items.every((item) => "citations" in item);
     },
     { message: "Items must match section type" },
   );
