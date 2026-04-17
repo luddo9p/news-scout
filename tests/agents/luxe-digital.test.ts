@@ -6,8 +6,8 @@ describe("LUXE_DIGITAL_CONFIG", () => {
     expect(LUXE_DIGITAL_CONFIG.name).toBe("luxe-digital");
   });
 
-  it("should define 4 source fetchers", () => {
-    expect(LUXE_DIGITAL_CONFIG.sources).toHaveLength(4);
+  it("should define 3 source fetchers", () => {
+    expect(LUXE_DIGITAL_CONFIG.sources).toHaveLength(3);
   });
 
   it("should have systemPrompt with luxury-digital sections", () => {

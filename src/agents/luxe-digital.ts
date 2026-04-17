@@ -1,7 +1,6 @@
 import { fetchBluesky } from "../sources/fetch-bluesky.js";
 import { fetchReddit } from "../sources/fetch-reddit.js";
 import { fetchRss } from "../sources/fetch-rss.js";
-import { fetchTwitter } from "../sources/fetch-twitter.js";
 import type { AgentConfig } from "../shared/types.js";
 
 const REDDIT_SUBREDDITS = [
@@ -94,21 +93,19 @@ export const LUXE_DIGITAL_CONFIG: AgentConfig = {
   name: "luxe-digital",
   sources: [
     () => fetchRss(RSS_FEEDS),
-    () => fetchReddit(REDDIT_SUBREDDITS, REDDIT_KEYWORDS),
+    () => fetchReddit(REDDIT_SUBREDDITS, REDDIT_KEYWORDS, "week"),
     () =>
       fetchBluesky(
         BLUESKY_HASHTAGS,
         process.env.BLUESKY_HANDLE,
         process.env.BLUESKY_APP_PASSWORD,
       ),
-    () =>
-      fetchTwitter(TWITTER_SEARCH_TERMS, process.env.APIFY_API_KEY || ""),
   ],
   systemPrompt: SYSTEM_PROMPT,
   emailBranding: {
     title: "Luxe Digital Scout",
     subjectPrefix: "Luxe Digital",
     footerSources:
-      "Jing Daily · Vogue Business · Luxury Daily · Reddit · Bluesky · X/Twitter",
+      "Jing Daily · Vogue Business · Luxury Daily · Reddit · Bluesky",
   },
 };

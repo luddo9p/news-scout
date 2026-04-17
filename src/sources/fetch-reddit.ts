@@ -46,9 +46,10 @@ function redditPostToContentItem(post: RedditPostData): ContentItem {
 async function fetchSubreddit(
   subreddit: string,
   keywords: string[],
+  timeRange: string,
 ): Promise<ContentItem[]> {
   const query = keywords.join(" ");
-  const url = `${REDDIT_BASE}/r/${subreddit}/search.json?q=${encodeURIComponent(query)}&restrict_sr=1&sort=relevance&t=day&limit=${POSTS_PER_SUBREDDIT}`;
+  const url = `${REDDIT_BASE}/r/${subreddit}/search.json?q=${encodeURIComponent(query)}&restrict_sr=1&sort=relevance&t=${timeRange}&limit=${POSTS_PER_SUBREDDIT}`;
 
   try {
     const controller = new AbortController();
@@ -78,11 +79,12 @@ async function fetchSubreddit(
 export async function fetchReddit(
   subreddits: string[],
   keywords: string[],
+  timeRange: string = "day",
 ): Promise<SourceResult> {
   try {
     // Fetch all subreddits in parallel
     const results = await Promise.all(
-      subreddits.map((sub) => fetchSubreddit(sub, keywords)),
+      subreddits.map((sub) => fetchSubreddit(sub, keywords, timeRange)),
     );
 
     const seen = new Set<string>();
