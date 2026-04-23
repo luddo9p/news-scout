@@ -49,7 +49,7 @@ describe("buildPrompt", () => {
           {
             title: "Gucci AR Lens",
             url: "https://luxurydaily.com/gucci-ar",
-            summary: "Gucci launches AR lens on Snapchat",
+            context: "Gucci launches AR lens on Snapchat",
             source: "Luxury Daily",
           },
         ],
@@ -83,7 +83,7 @@ describe("buildPrompt", () => {
           {
             title: "Dior digital campaign",
             url: "https://reddit.com/r/luxury/1",
-            summary: "Dior's new AR activation",
+            context: "Dior's new AR activation",
             source: "Reddit",
             score: 342,
           },
@@ -98,7 +98,7 @@ describe("buildPrompt", () => {
     const items = Array.from({ length: 20 }, (_, i) => ({
       title: `Item ${i}`,
       url: `https://example.com/${i}`,
-      summary: "x".repeat(200),
+      context: "x".repeat(200),
       source: "Test",
     }));
     const sources: SourceResult[] = [{ source: "Test", items }];
@@ -186,7 +186,7 @@ describe("synthesize", () => {
       new Response(JSON.stringify({ content: VALID_JSON_RESPONSE }), { status: 200 }),
     );
     const result = await synthesize(
-      [{ source: "Test", items: [{ title: "Test", url: "https://example.com", summary: "Test", source: "Test" }] }],
+      [{ source: "Test", items: [{ title: "Test", url: "https://example.com", context: "Test", source: "Test" }] }],
       "http://localhost:3000",
       CUSTOM_SYSTEM_PROMPT,
       "test-api-key",
@@ -204,7 +204,7 @@ describe("synthesize", () => {
         new Response(JSON.stringify({ content: VALID_JSON_RESPONSE }), { status: 200 }),
       );
     const result = await synthesize(
-      [{ source: "Test", items: [{ title: "T", url: "https://example.com", summary: "s", source: "Test" }] }],
+      [{ source: "Test", items: [{ title: "T", url: "https://example.com", context: "s", source: "Test" }] }],
       "http://localhost:3000",
       "Any system prompt",
     );
@@ -222,7 +222,7 @@ describe("synthesize", () => {
       );
     await expect(
       synthesize(
-        [{ source: "Test", items: [{ title: "T", url: "https://example.com", summary: "s", source: "Test" }] }],
+        [{ source: "Test", items: [{ title: "T", url: "https://example.com", context: "s", source: "Test" }] }],
         "http://localhost:3000",
         "Any prompt",
       ),
@@ -235,7 +235,7 @@ describe("synthesize", () => {
       new Response(JSON.stringify({ content: fenced }), { status: 200 }),
     );
     const result = await synthesize(
-      [{ source: "Test", items: [{ title: "T", url: "https://example.com", summary: "s", source: "Test" }] }],
+      [{ source: "Test", items: [{ title: "T", url: "https://example.com", context: "s", source: "Test" }] }],
       "http://localhost:3000",
       "Any prompt",
     );
@@ -247,7 +247,7 @@ describe("synthesize", () => {
       new Response(JSON.stringify({ content: VALID_JSON_RESPONSE }), { status: 200 }),
     );
     await synthesize(
-      [{ source: "Test", items: [{ title: "T", url: "https://example.com", summary: "s", source: "Test" }] }],
+      [{ source: "Test", items: [{ title: "T", url: "https://example.com", context: "s", source: "Test" }] }],
       "http://localhost:3000",
       "Any system prompt",
     );
@@ -264,7 +264,7 @@ describe("synthesize", () => {
     );
     await expect(
       synthesize(
-        [{ source: "Test", items: [{ title: "T", url: "https://example.com", summary: "s", source: "Test" }] }],
+        [{ source: "Test", items: [{ title: "T", url: "https://example.com", context: "s", source: "Test" }] }],
         "http://localhost:3000",
         "Any system prompt",
         "bad-key",
@@ -278,7 +278,7 @@ describe("synthesize", () => {
     );
     await expect(
       synthesize(
-        [{ source: "Test", items: [{ title: "T", url: "https://example.com", summary: "s", source: "Test" }] }],
+        [{ source: "Test", items: [{ title: "T", url: "https://example.com", context: "s", source: "Test" }] }],
         "http://localhost:3000",
         "Any system prompt",
       ),
@@ -293,7 +293,7 @@ describe("synthesize", () => {
     });
     await expect(
       synthesize(
-        [{ source: "Test", items: [{ title: "T", url: "https://example.com", summary: "s", source: "Test" }] }],
+        [{ source: "Test", items: [{ title: "T", url: "https://example.com", context: "s", source: "Test" }] }],
         "http://localhost:3000",
         "Any system prompt",
       ),

@@ -39,7 +39,7 @@ const MOCK_CONFIG: AgentConfig = {
           {
             title: "Test Item",
             url: "https://example.com",
-            summary: "Test summary",
+            context: "Test summary",
             source: "Test Source",
           },
         ],
@@ -134,7 +134,7 @@ describe("runAgent", () => {
               {
                 title: "Good Item",
                 url: "https://example.com/good",
-                summary: "Good summary",
+                context: "Good summary",
                 source: "Good Source",
               },
             ],

@@ -35,7 +35,7 @@ function parseRssItems(xml: string): ContentItem[] {
         return {
           title,
           url: link,
-          summary: description || title,
+          context: description || title,
           source: "RSS",
           date: pubDate ? new Date(pubDate).toISOString() : undefined,
         };

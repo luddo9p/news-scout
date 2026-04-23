@@ -37,7 +37,7 @@ function tweetToContentItem(tweet: ApifyTweet): ContentItem | null {
   return {
     title,
     url: tweet.url || "",
-    summary: tweet.text,
+    context: tweet.text,
     source: "X/Twitter",
     author: tweet.author?.userName || tweet.author?.name || undefined,
     date: tweet.createdAt ? parseTwitterDate(tweet.createdAt) : undefined,

@@ -11,11 +11,13 @@ export interface SourceResult {
 export interface ContentItem {
   title: string;
   url: string;
-  summary: string;
+  context: string;
   source: string;
   author?: string;
   date?: string;
   score?: number;
+  tags?: string[];
+  highlights?: string[];
 }
 
 /** Full result of the scout run */

@@ -51,15 +51,15 @@ export function buildPrompt(sources: SourceResult[]): string {
       .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
       .slice(0, MAX_ITEMS_PER_SOURCE);
     for (const item of items) {
-      const summary =
-        item.summary.length > MAX_SUMMARY_LENGTH
-          ? item.summary.slice(0, MAX_SUMMARY_LENGTH) + "..."
-          : item.summary;
+      const context =
+        item.context.length > MAX_SUMMARY_LENGTH
+          ? item.context.slice(0, MAX_SUMMARY_LENGTH) + "..."
+          : item.context;
       content += `- **${item.title}**`;
       if (item.author) content += ` (par ${item.author})`;
       if (item.score) content += ` [${item.score} points]`;
       content += `\n  Lien : ${item.url}`;
-      content += `\n  Résumé : ${summary}\n`;
+      content += `\n  Contexte : ${context}\n`;
     }
     content += "\n";
   }

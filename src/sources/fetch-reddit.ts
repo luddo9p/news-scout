@@ -28,14 +28,14 @@ function redditPostToContentItem(post: RedditPostData): ContentItem {
     ? `https://www.reddit.com${post.permalink}`
     : post.url;
 
-  const summary = post.selftext
+  const context = post.selftext
     ? post.selftext.slice(0, 200) + (post.selftext.length > 200 ? "..." : "")
     : post.title;
 
   return {
     title: post.title,
     url: postUrl,
-    summary,
+    context,
     source: "Reddit",
     author: post.author,
     date: new Date(post.created_utc * 1000).toISOString(),

@@ -65,7 +65,7 @@ describe("fetchTwitter", () => {
     const result = await fetchTwitter(["#IA"], "fake-apify-key");
 
     expect(result.items[0].title.length).toBeLessThanOrEqual(123); // 120 chars + "..."
-    expect(result.items[0].summary).toBe(longText);
+    expect(result.items[0].context).toBe(longText);
   });
 
   it("should parse Twitter date format to ISO", async () => {

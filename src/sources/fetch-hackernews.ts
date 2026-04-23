@@ -25,7 +25,7 @@ function hitToContentItem(hit: HNHit): ContentItem | null {
   return {
     title: hit.title,
     url: hit.url || `https://news.ycombinator.com/item?id=${hit.objectID}`,
-    summary: hit.title,
+    context: hit.title,
     source: "Hacker News",
     author: hit.author || undefined,
     date: hit.created_at,

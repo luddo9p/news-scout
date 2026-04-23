@@ -53,7 +53,7 @@ function postToContentItem(post: BlueskyPost): ContentItem {
       post.record.text.slice(0, 120) +
       (post.record.text.length > 120 ? "..." : ""),
     url: `https://bsky.app/profile/${post.author.handle}/post/${postId}`,
-    summary: post.record.text,
+    context: post.record.text,
     source: "Bluesky",
     author: post.author.displayName || post.author.handle,
     date: post.record.createdAt,

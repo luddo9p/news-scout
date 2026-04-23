@@ -1,33 +1,33 @@
 #!/bin/bash
-set -euo pipefail
+# Reçoit le JSON de Claude Code sur stdin
+read -r JSON_DATA
 
-echo "=== Agent Scout Deploy ==="
-echo "Starting deployment at $(date)"
+# On essaie les différentes variantes de clés possibles dans la v2.1
+# .percentage ou .used_percentage | .model ou .model_name | .files ou .file_count | .tps
+INFO=$(echo "$JSON_DATA" | jq -r '[
+  (.percentage // .used_percentage // 0),
+  (.model // .model_name // "Ollama"),
+  (.files // .fileCount // .file_count // 0),
+  (.tps // .tokens_per_second // 0),
+  (.maxFileTokens // .max_file_tokens // 0)
+] | @tsv' 2>/dev/null)
 
-cd /opt/agent-scout
+# Si INFO est vide, on ne fait rien pour éviter de casser l'affichage
+[[ -z "$INFO" ]] && exit 0
 
-echo "Pulling latest code..."
-git pull origin main
+read -r PERCENT MODEL FILES TPS MAX_TOKENS <<< "$INFO"
 
-echo "Installing dependencies..."
-npm ci
+# Couleur dynamique
+COLOR="\033[32m" # Vert
+[[ "$PERCENT" -gt 50 ]] && COLOR="\033[33m" # Jaune
+[[ "$PERCENT" -gt 85 ]] && COLOR="\033[31m" # Rouge
 
-echo "Building TypeScript..."
-npm run build
+# Alerte fichier trop gros
+WARNING=""
+[[ "$MAX_TOKENS" -gt 10000 ]] && WARNING=" ⚠️  "
 
-echo "Rebuilding and restarting Docker containers..."
-docker compose up -d --build
+# Calcul économie rapide
+SAVED=$(echo "scale=2; ($PERCENT * 0.18) / 100" | bc 2>/dev/null || echo "0.00")
 
-echo "Running health check..."
-for i in 1 2 3 4 5; do
-  if curl -sf http://localhost:3001/health > /dev/null 2>&1; then
-    echo "Health check passed!"
-    echo "=== Deploy complete at $(date) ==="
-    exit 0
-  fi
-  echo "Waiting for api-bridge... (attempt $i/5)"
-  sleep 3
-done
-
-echo "ERROR: Health check failed after 5 attempts"
-exit 1
+# Affichage minimaliste (Look clean)
+echo -e "[ ${COLOR}${PERCENT}%\033[0m ] | 📄 $FILES files | ⚡ $TPS t/s |$WARNING 🤖 $MODEL | \033[32mSaved: ~$SAVED$\033[0m"
