@@ -2,6 +2,7 @@ node_modules/
 dist/
 .env
 *.log
+data/
 
 # Ollama data (Docker volume mount)
 ollama_data/

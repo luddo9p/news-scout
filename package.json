@@ -12,10 +12,12 @@
     "build": "tsc",
     "start": "tsx --env-file=.env src/index.ts --agent=tech-ai",
     "start:luxe": "tsx --env-file=.env src/index.ts --agent=luxe-digital",
+    "start:bourse": "tsx --env-file=.env src/index.ts --agent=bourse-scout",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
+    "cheerio": "^1.2.0",
     "fast-xml-parser": "^5.6.0",
     "resend": "^4.0.0",
     "zod": "^4.3.6"
