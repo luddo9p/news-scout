@@ -53,10 +53,13 @@ export function parseRenderedHtml(html: string): PortfolioTable | null {
   const headings = $("h2.wp-block-heading, h2").toArray();
   for (const heading of headings) {
     const text = $(heading).text().trim();
-    const match = text.match(/Suivi\s+(\d{4})/i);
-    if (!match) continue;
+    const yearMatch = text.match(/(\d{4})/);
+    if (!yearMatch) continue;
 
-    const year = parseInt(match[1], 10);
+    const isClosed = /résultat/i.test(text);
+    if (isClosed) continue;
+
+    const year = parseInt(yearMatch[1], 10);
     const table = $(heading).next("div.csv-container").find("table.csv");
 
     if (table.length === 0) continue;

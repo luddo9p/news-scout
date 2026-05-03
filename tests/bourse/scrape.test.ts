@@ -61,8 +61,8 @@ describe("parseRenderedHtml", () => {
     expect(result!.assets).toHaveLength(3);
   });
 
-  it("should return null when no Suivi table found", () => {
-    const html = "<h2>Résultat 2025</h2><p>No suivi here</p>";
+  it("should return null when no active year table found", () => {
+    const html = "<h2>Résultat 2025</h2><p>No active year here</p>";
     const result = parseRenderedHtml(html);
     expect(result).toBeNull();
   });
@@ -70,5 +70,64 @@ describe("parseRenderedHtml", () => {
   it("should extract performance percentage from header", () => {
     const result = parseRenderedHtml(SUIVI_2026_HTML);
     expect(result!.performance).toBe("8.50%");
+  });
+
+  // Higgons-style headings
+  const EN_COURS_2026_HTML = `
+  <h2 class="wp-block-heading">2026 En cours</h2>
+  <div class='csv-container'>
+  <table class='csv'>
+  <tr><th>Ticker</th><th>Nom</th><th>Date Achat</th><th>Cours Achat</th><th>Date Vente</th><th>Cours Vente</th><th>+/- Value : 10.12%</th></tr>
+  <tr><td>EPA:GLO</td><td>GL Events</td><td>2026-01-05</td><td> 42.50</td><td></td><td> 48.30</td><td>13.65%</td></tr>
+  <tr><td>FRA:V02</td><td>Hoegh Autoliner</td><td>2026-02-10</td><td> 18.75</td><td>2026-04-01</td><td> 21.40</td><td>14.13%</td></tr>
+  </table>
+  </div>
+  `;
+
+  const RESULTAT_HIGGONS_2025_HTML = `
+  <h2 class="wp-block-heading">Résultat 2025</h2>
+  <div class='csv-container'>
+  <table class='csv'>
+  <tr><th>Ticker</th><th>Nom</th><th>Date Achat</th><th>Cours Achat</th><th>Date Vente</th><th>Cours Vente</th><th>+/- Value : 16.34%</th></tr>
+  <tr><td>EPA:ALGIL</td><td>Guillin</td><td>2025-01-01</td><td> 85.20</td><td>2025-06-15</td><td> 99.10</td><td>16.31%</td></tr>
+  </table>
+  </div>
+  `;
+
+  it("should parse 'En cours' heading (Higgons format)", () => {
+    const result = parseRenderedHtml(EN_COURS_2026_HTML);
+    expect(result).not.toBeNull();
+    expect(result!.year).toBe(2026);
+    expect(result!.label).toBe("2026 En cours");
+    expect(result!.isCurrent).toBe(true);
+    expect(result!.performance).toBe("10.12%");
+    expect(result!.assets).toHaveLength(2);
+  });
+
+  it("should skip Résultat tables and find En cours (Higgons combined)", () => {
+    const combined = RESULTAT_HIGGONS_2025_HTML + EN_COURS_2026_HTML;
+    const result = parseRenderedHtml(combined);
+    expect(result).not.toBeNull();
+    expect(result!.year).toBe(2026);
+    expect(result!.assets).toHaveLength(2);
+  });
+
+  it("should return null when only Résultat tables exist", () => {
+    const result = parseRenderedHtml(RESULTAT_HIGGONS_2025_HTML);
+    expect(result).toBeNull();
+  });
+
+  it("should parse Higgons asset fields correctly", () => {
+    const result = parseRenderedHtml(EN_COURS_2026_HTML);
+    const glo = result!.assets.find((a) => a.ticker === "EPA:GLO");
+    expect(glo).toBeDefined();
+    expect(glo!.nom).toBe("GL Events");
+    expect(glo!.dateAchat).toBe("2026-01-05");
+    expect(glo!.coursAchat).toBe(42.50);
+    expect(glo!.dateVente).toBe("");
+    expect(glo!.coursVente).toBe(48.30);
+
+    const hoegh = result!.assets.find((a) => a.ticker === "FRA:V02");
+    expect(hoegh!.dateVente).toBe("2026-04-01");
   });
 });

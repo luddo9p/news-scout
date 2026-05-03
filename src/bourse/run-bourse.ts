@@ -9,18 +9,16 @@ import {
 } from "./email.js";
 import { sendEmail } from "../shared/send-email.js";
 import type { PortfolioState, BourseScoutResult } from "./types.js";
-import {
-  BOURSE_PORTFOLIO_URL,
-  BOURSE_BRANDING,
-  BOURSE_STATE_PATH,
-} from "../agents/bourse-scout.js";
+import type { BoursePortfolioConfig } from "../agents/bourse-scout.js";
 
-export async function runBourseScout(): Promise<BourseScoutResult> {
-  const branding = BOURSE_BRANDING;
+export async function runBourseScout(
+  config: BoursePortfolioConfig,
+): Promise<BourseScoutResult> {
+  const branding = config.branding;
   const now = new Date();
 
   // 1. Scrape current portfolio
-  const scrapeResult = await fetchAndParsePortfolio(BOURSE_PORTFOLIO_URL);
+  const scrapeResult = await fetchAndParsePortfolio(config.apiUrl);
   if (scrapeResult.error || !scrapeResult.suivi) {
     return {
       success: false,
@@ -33,7 +31,7 @@ export async function runBourseScout(): Promise<BourseScoutResult> {
   const currentSuivi = scrapeResult.suivi;
 
   // 2. Load previous state
-  const previousState = await loadState(BOURSE_STATE_PATH);
+  const previousState = await loadState(config.statePath);
 
   // 3. First run — no previous state
   if (!previousState) {
@@ -42,7 +40,7 @@ export async function runBourseScout(): Promise<BourseScoutResult> {
       suivi: currentSuivi,
     };
 
-    await saveState(newState, BOURSE_STATE_PATH);
+    await saveState(newState, config.statePath);
 
     // Send init email
     const subject = makeBourseInitSubject(branding.subjectPrefix);
@@ -50,7 +48,7 @@ export async function runBourseScout(): Promise<BourseScoutResult> {
       currentSuivi,
       now,
       branding.title,
-      branding.footerSource,
+      branding.footerSources,
     );
 
     const emailResult = await sendEmail({
@@ -86,7 +84,7 @@ export async function runBourseScout(): Promise<BourseScoutResult> {
       lastUpdated: now.toISOString(),
       suivi: currentSuivi,
     };
-    await saveState(newState, BOURSE_STATE_PATH);
+    await saveState(newState, config.statePath);
     console.log(`[${branding.title}] No changes detected`);
     return { success: true, emailSent: false, changes: 0, errors: [] };
   }
@@ -98,7 +96,7 @@ export async function runBourseScout(): Promise<BourseScoutResult> {
     currentSuivi,
     now,
     branding.title,
-    branding.footerSource,
+    branding.footerSources,
   );
 
   const emailResult = await sendEmail({
@@ -124,7 +122,7 @@ export async function runBourseScout(): Promise<BourseScoutResult> {
     lastUpdated: now.toISOString(),
     suivi: currentSuivi,
   };
-  await saveState(newState, BOURSE_STATE_PATH);
+  await saveState(newState, config.statePath);
 
   console.log(
     `[${branding.title}] ${changes.length} change(s) detected, email sent`,

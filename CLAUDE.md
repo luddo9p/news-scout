@@ -86,7 +86,13 @@ Optional: `API_KEY` (VPS auth), `RESEND_FROM` (default: `onboarding@resend.dev`)
 - All fetch modules return `SourceResult` with graceful error handling (never throw — errors go in the `error` field)
 - Email HTML must use inline styles only (no CSS classes) for email client compatibility
 - `systemPrompt` is per-agent (not hardcoded in synthesize module) — each agent defines its own sections and tone
-- Cron: `0 9,17 * * * /opt/agent-scout/cron-run.sh --agent tech-ai` and `0 10 * * * /opt/agent-scout/cron-run.sh --agent luxe-digital` on VPS
+- Cron (VPS crontab, Paris time):
+  - `0 9,17 * * * /opt/agent-scout/cron-run.sh --agent tech-ai` (2×/jour)
+  - `0 10 * * 1 /opt/agent-scout/cron-run.sh --agent luxe-digital` (1×/semaine, lundi)
+  - `0 18 * * * /opt/agent-scout/cron-run.sh --agent bourse-scout` (1×/jour)
+  - `5 18 * * * /opt/agent-scout/cron-run.sh --agent higgons-scout` (1×/jour)
+  - `10 18 * * * /opt/agent-scout/cron-run.sh --agent maugey-scout` (1×/jour)
+  - `15 18 * * * /opt/agent-scout/cron-run.sh --agent dunand-scout` (1×/jour)
 
 ## VPS
 

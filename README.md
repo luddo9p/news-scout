@@ -1,24 +1,25 @@
 # Agent Scout
 
-Agent de veille tech automatisé qui surveille l'IA et le vibe coding. Récupère les contenus de 4 sources, les synthétise via Ollama Cloud (GLM-5.1), et envoie un résumé HTML par email. Programmé via cron (9h et 17h heure de Paris).
+Plateforme multi-agents de veille automatisée. Récupère les contenus de multiples sources, les synthétise via Ollama Cloud (GLM-5.1), et envoie des résumés HTML par email via Resend.
+
+## Agents
+
+| Agent | Description | Fréquence |
+|---|---|---|
+| `tech-ai` | Veille IA, vibe coding, LLM | 2×/jour (9h, 17h) |
+| `luxe-digital` | Luxe digital, AR, IA premium | 1×/semaine (lundi 10h) |
+| `bourse-scout` | Portefeuille Pierre Schchang | 1×/jour (18h) |
+| `higgons-scout` | Portefeuille William Higgons | 1×/jour (18h05) |
+| `maugey-scout` | Portefeuille Stéphanie Maugey | 1×/jour (18h10) |
+| `dunand-scout` | Portefeuille Léa Dunand-Chatellet | 1×/jour (18h15) |
 
 ## Architecture
 
 ```
-Cron (9h/17h Paris)
-  → fetch parallèle (Bluesky, Hacker News, Reddit, X/Twitter)
-  → synthèse Ollama Cloud via Express bridge (GLM-5.1, HTML structuré)
-  → envoi email via Resend
+Cron → cron-run.sh --agent <name>
+  → Standard agents : fetch parallèle → synthèse Ollama Cloud → email
+  → Bourse agents : scrape WordPress → diff vs état précédent → email si changements
 ```
-
-## Sources
-
-| Source      | API                                     | Auth                                                  |
-| ----------- | --------------------------------------- | ----------------------------------------------------- |
-| Bluesky     | AT Protocol `app.bsky.feed.searchPosts` | Optionnel (`BLUESKY_HANDLE` + `BLUESKY_APP_PASSWORD`) |
-| Hacker News | Algolia                                 | Aucune                                                |
-| Reddit      | Reddit search API                       | Aucune                                                |
-| X/Twitter   | Apify `apidojo~tweet-scraper`           | `APIFY_API_KEY`                                       |
 
 ## Installation
 
@@ -38,32 +39,38 @@ Le bridge Express expose `POST /generate` sur le port 3001, proxy vers l'API Oll
 ## Développement
 
 ```bash
-npm start             # Lancer le pipeline complet
-npm run build         # Compilation TypeScript
-npm test              # Vitest
-npm run test:watch    # Vitest en watch mode
+npm start                          # Lancer tech-ai (défaut)
+npm start -- --agent luxe-digital # Lancer luxe-digital
+npm start -- --agent bourse-scout # Lancer bourse-scout
+npm run build                      # Compilation TypeScript
+npm test                           # Vitest
+npm run test:watch                 # Vitest en watch mode
 ```
 
 ## Variables d'environnement
 
-| Variable               | Requise | Description                                         |
-| ---------------------- | ------- | --------------------------------------------------- |
-| `VPS_URL`              | ✅      | URL du bridge Express (ex: `http://localhost:3001`) |
-| `API_KEY`              | ✅      | Clé d'authentification du bridge                    |
-| `OLLAMA_API_KEY`       | ✅      | Clé Ollama Cloud                                    |
-| `RESEND_API_KEY`       | ✅      | Clé API Resend                                      |
-| `RESEND_TO`            | ✅      | Email destinataire                                  |
-| `RESEND_FROM`          | ❌      | Expéditeur (défaut : `onboarding@resend.dev`)       |
-| `BLUESKY_HANDLE`       | ❌      | Handle Bluesky pour rate limiting                   |
-| `BLUESKY_APP_PASSWORD` | ❌      | Mot de passe app Bluesky                            |
-| `APIFY_API_KEY`        | ❌      | Pour X/Twitter via Apify                            |
+| Variable | Requise | Description |
+|---|---|---|
+| `VPS_URL` | ✅ | URL du bridge Express |
+| `API_KEY` | ✅ | Clé d'authentification du bridge |
+| `RESEND_API_KEY` | ✅ | Clé API Resend |
+| `RESEND_TO` | ✅ | Email destinataire |
+| `RESEND_FROM` | ❌ | Expéditeur (défaut : `onboarding@resend.dev`) |
+| `BLUESKY_HANDLE` | ❌ | Handle Bluesky pour rate limiting |
+| `BLUESKY_APP_PASSWORD` | ❌ | Mot de passe app Bluesky |
+| `APIFY_API_KEY` | ❌ | Pour X/Twitter via Apify |
 
-## Cron
+## Cron (VPS)
 
-Ajouter au crontab du serveur pour une exécution à 9h et 17h Paris :
+Horaires en heure de Paris :
 
-```
-0 7,15 * * * cd /opt/agent-scout && npm start >> /var/log/agent-scout.log 2>&1
+```crontab
+0  9,17 * * * /opt/agent-scout/cron-run.sh --agent tech-ai
+0  10    * * 1 /opt/agent-scout/cron-run.sh --agent luxe-digital
+0  18    * * * /opt/agent-scout/cron-run.sh --agent bourse-scout
+5  18    * * * /opt/agent-scout/cron-run.sh --agent higgons-scout
+10 18    * * * /opt/agent-scout/cron-run.sh --agent maugey-scout
+15 18    * * * /opt/agent-scout/cron-run.sh --agent dunand-scout
 ```
 
 ## Licence
