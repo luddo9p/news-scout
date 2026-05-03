@@ -13,6 +13,9 @@
     "start": "tsx --env-file=.env src/index.ts --agent=tech-ai",
     "start:luxe": "tsx --env-file=.env src/index.ts --agent=luxe-digital",
     "start:bourse": "tsx --env-file=.env src/index.ts --agent=bourse-scout",
+    "start:higgons": "tsx --env-file=.env src/index.ts --agent=higgons-scout",
+    "start:maugey": "tsx --env-file=.env src/index.ts --agent=maugey-scout",
+    "start:dunand": "tsx --env-file=.env src/index.ts --agent=dunand-scout",
     "test": "vitest run",
     "test:watch": "vitest"
   },

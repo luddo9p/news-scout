@@ -42,7 +42,8 @@ jobs:
           else
             cd /opt/agent-scout
             echo "Pulling latest code..."
-            git pull origin main
+            git fetch origin main
+            git reset --hard origin/main
           fi
 
           echo "Installing dependencies..."
