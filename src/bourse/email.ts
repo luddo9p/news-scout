@@ -1,5 +1,13 @@
 import type { AssetChange, PortfolioTable } from "./types.js";
 
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 const COLORS = {
   purchase: "#34C759",
   sale: "#FF3B30",
@@ -49,7 +57,7 @@ export function buildBourseChangeEmailHtml(
   const sales = changes.filter((c) => c.type === "new_sale");
   const nameChanges = changes.filter((c) => c.type === "name_change");
 
-  let content = `<p style="margin:0 0 8px;font-size:15px;color:#8e8e93;">${summary}</p>`;
+  let content = `<p style="margin:0 0 8px;font-size:15px;color:#8e8e93;">${escapeHtml(summary)}</p>`;
 
   if (purchases.length > 0) {
     content += buildSection("Nouveaux achats", COLORS.purchase, [
@@ -130,7 +138,7 @@ export function buildBourseInitEmailHtml(
 
   let content = `
     <p style="margin:0 0 16px;font-size:17px;font-weight:600;color:#1c1c1e;">Mise en service</p>
-    <p style="margin:0 0 16px;font-size:15px;color:#1c1c1e;">${summary}</p>
+    <p style="margin:0 0 16px;font-size:15px;color:#1c1c1e;">${escapeHtml(summary)}</p>
     <p style="margin:0 0 8px;font-size:13px;color:#8e8e93;">Les prochains emails ne seront envoyés qu'en cas de changement détecté.</p>
   `;
 
@@ -170,7 +178,7 @@ function buildSection(
     .join("");
 
   return `
-    <p style="margin:20px 0 8px;font-size:15px;font-weight:600;color:${color};">${title}</p>
+    <p style="margin:20px 0 8px;font-size:15px;font-weight:600;color:${color};">${escapeHtml(title)}</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e5ea;">
       <tr><td style="padding:0;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
@@ -182,7 +190,7 @@ function buildRow(cells: string[]): string {
   const tds = cells
     .map(
       (c) =>
-        `<td style="padding:6px 12px;font-size:14px;color:#1c1c1e;border-bottom:1px solid #f2f2f7;">${c}</td>`,
+        `<td style="padding:6px 12px;font-size:14px;color:#1c1c1e;border-bottom:1px solid #f2f2f7;">${escapeHtml(c)}</td>`,
     )
     .join("");
   return `<tr>${tds}</tr>`;
@@ -215,7 +223,7 @@ function wrapInTemplate(
           <tr>
             <td style="padding:0 24px;">
               <h1 style="margin:0;font-size:28px;font-weight:700;letter-spacing:-0.5px;color:#1c1c1e;">
-                ${title}
+                ${escapeHtml(title)}
               </h1>
               <p style="margin:6px 0 0;font-size:15px;font-weight:400;color:#8e8e93;">
                 ${formattedDate}
@@ -239,8 +247,8 @@ function wrapInTemplate(
     <tr>
       <td style="padding:24px 24px 40px;text-align:center;">
         <p style="margin:0;font-size:12px;color:#8e8e93;line-height:1.5;">
-          Généré automatiquement par ${title}<br>
-          Source : ${footerSource}
+          Généré automatiquement par ${escapeHtml(title)}<br>
+          Source : ${escapeHtml(footerSource)}
         </p>
       </td>
     </tr>

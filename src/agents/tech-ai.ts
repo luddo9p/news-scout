@@ -1,8 +1,13 @@
 import { fetchBluesky } from "../sources/fetch-bluesky.js";
 import { fetchHackerNews } from "../sources/fetch-hackernews.js";
 import { fetchReddit } from "../sources/fetch-reddit.js";
-import { fetchTwitter } from "../sources/fetch-twitter.js";
+import { fetchMastodon } from "../sources/fetch-mastodon.js";
+import { fetchDevTo } from "../sources/fetch-devto.js";
+import { fetchRss } from "../sources/fetch-rss.js";
+import { fetchTerminalFeed } from "../sources/fetch-terminalfeed.js";
+import { fetchLobsters } from "../sources/fetch-lobsters.js";
 import type { AgentConfig } from "../shared/types.js";
+import type { RssFeedConfig } from "../sources/fetch-rss.js";
 
 const BLUESKY_HASHTAGS = [
   "#vibecoding",
@@ -21,7 +26,13 @@ const REDDIT_SUBREDDITS = [
   "coding",
 ];
 const REDDIT_KEYWORDS = ["AI", "LLM", "vibe coding", "Claude"];
-const TWITTER_SEARCH_TERMS = ["#vibecoding", "#IA", "vibe coding", "AI tools"];
+const MASTODON_HASHTAGS = ["#AI", "#LLM", "#vibecoding", "#claude"];
+const DEVTO_TAGS = ["ai", "llm"];
+const RSS_AI_FEEDS: RssFeedConfig[] = [
+  { url: "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml", label: "The Verge AI" },
+  { url: "https://feeds.arstechnica.com/arstechnica/technology-lab", label: "Ars Technica" },
+  { url: "https://techcrunch.com/category/artificial-intelligence/feed/", label: "TechCrunch AI" },
+];
 
 const SYSTEM_PROMPT = `Tu es Agent Scout, un analyste de veille technologique. Tu synthétises des contenus en JSON structuré.
 
@@ -77,13 +88,16 @@ export const TECH_AI_CONFIG: AgentConfig = {
       ),
     () => fetchHackerNews(HN_QUERIES),
     () => fetchReddit(REDDIT_SUBREDDITS, REDDIT_KEYWORDS),
-    () =>
-      fetchTwitter(TWITTER_SEARCH_TERMS, process.env.APIFY_API_KEY || ""),
+    () => fetchMastodon(MASTODON_HASHTAGS),
+    () => fetchDevTo(DEVTO_TAGS),
+    () => fetchRss(RSS_AI_FEEDS),
+    () => fetchTerminalFeed(),
+    () => fetchLobsters(),
   ],
   systemPrompt: SYSTEM_PROMPT,
   emailBranding: {
     title: "Agent Scout",
     subjectPrefix: "Agent Scout",
-    footerSources: "Bluesky · Hacker News · Reddit · X/Twitter",
+    footerSources: "Bluesky · Hacker News · Reddit · Mastodon · Dev.to · RSS · GitHub Trending · Lobste.rs",
   },
 };

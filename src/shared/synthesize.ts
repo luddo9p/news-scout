@@ -2,10 +2,11 @@ import { SynthesisSchema } from "./synthesis-schema.js";
 import type { SynthesisData } from "./synthesis-schema.js";
 import type { SourceResult } from "./types.js";
 
-const DEFAULT_MODEL = "glm-5.1:cloud";
+const DEFAULT_MODEL = "kimi-k2.6:cloud";
 const TIMEOUT_MS = 300000;
-const MAX_ITEMS_PER_SOURCE = 5;
-const MAX_SUMMARY_LENGTH = 100;
+const MAX_TOTAL_ITEMS = 15;
+const REDUCED_TOTAL_ITEMS = 10;
+const MAX_SUMMARY_LENGTH = 80;
 
 export function extractJson(raw: string): string {
   const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
@@ -28,7 +29,7 @@ export function parseSynthesis(
   return { error: parsed.error.message };
 }
 
-export function buildPrompt(sources: SourceResult[]): string {
+export function buildPrompt(sources: SourceResult[], maxTotal = MAX_TOTAL_ITEMS): string {
   let content =
     "Voici les contenus collectés aujourd'hui. Synthétise-les en suivant les sections définies dans le prompt système.\n\n";
   content += "Règles :\n";
@@ -37,31 +38,24 @@ export function buildPrompt(sources: SourceResult[]): string {
   content += "- Si plusieurs sources couvrent le même sujet, fusionne-les en un seul item.\n";
   content += "- Utilise les scores (points) pour prioriser les items dans les sections importantes.\n\n";
 
-  for (const source of sources) {
-    content += `## Source : ${source.source}\n`;
-    if (source.error) {
-      content += `⚠️ Erreur : ${source.error}\n\n`;
-      continue;
-    }
-    if (source.items.length === 0) {
-      content += "(Aucun contenu trouvé)\n\n";
-      continue;
-    }
-    const items = source.items
-      .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
-      .slice(0, MAX_ITEMS_PER_SOURCE);
-    for (const item of items) {
-      const context =
-        item.context.length > MAX_SUMMARY_LENGTH
-          ? item.context.slice(0, MAX_SUMMARY_LENGTH) + "..."
-          : item.context;
-      content += `- **${item.title}**`;
-      if (item.author) content += ` (par ${item.author})`;
-      if (item.score) content += ` [${item.score} points]`;
-      content += `\n  Lien : ${item.url}`;
-      content += `\n  Contexte : ${context}\n`;
-    }
-    content += "\n";
+  // Merge all items, sort by score, keep top N globally
+  const allItems = sources
+    .filter((s) => !s.error && s.items.length > 0)
+    .flatMap((s) => s.items)
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+    .slice(0, maxTotal);
+
+  for (const item of allItems) {
+    const ctx =
+      item.context.length > MAX_SUMMARY_LENGTH
+        ? item.context.slice(0, MAX_SUMMARY_LENGTH) + "..."
+        : item.context;
+    content += `- **${item.title}**`;
+    if (item.author) content += ` (par ${item.author})`;
+    if (item.score) content += ` [${item.score} points]`;
+    content += ` [${item.source}]`;
+    content += `\n  Lien : ${item.url}`;
+    content += `\n  Contexte : ${ctx}\n`;
   }
 
   return content;
@@ -125,6 +119,7 @@ export async function synthesize(
   systemPrompt: string,
   apiKey?: string,
 ): Promise<SynthesisData> {
+  // Attempt 1: full prompt
   const raw = await callOllama(buildPrompt(sources), systemPrompt, vpsUrl, apiKey);
   const first = parseSynthesis(raw);
   if ("data" in first) return first.data;
@@ -133,6 +128,7 @@ export async function synthesize(
     `[synthesize] First attempt returned invalid JSON, retrying. Error: ${first.error}`,
   );
 
+  // Attempt 2: retry with corrected JSON
   const retryUserPrompt = `Ton JSON précédent était invalide. Erreur : ${first.error}. Retourne UNIQUEMENT du JSON valide respectant le schéma.`;
   const retryRaw = await callOllama(
     retryUserPrompt,
@@ -143,5 +139,18 @@ export async function synthesize(
   const retry = parseSynthesis(retryRaw);
   if ("data" in retry) return retry.data;
 
-  throw new Error(`Synthesis JSON invalid after retry: ${retry.error}`);
+  // Attempt 3: reduced prompt with fewer items
+  console.warn(
+    "[synthesize] Second attempt still invalid, retrying with reduced prompt.",
+  );
+  const reducedRaw = await callOllama(
+    buildPrompt(sources, REDUCED_TOTAL_ITEMS),
+    systemPrompt,
+    vpsUrl,
+    apiKey,
+  );
+  const reduced = parseSynthesis(reducedRaw);
+  if ("data" in reduced) return reduced.data;
+
+  throw new Error(`Synthesis JSON invalid after retry: ${reduced.error}`);
 }

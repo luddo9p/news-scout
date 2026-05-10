@@ -56,13 +56,13 @@ describe("buildPrompt", () => {
       },
     ];
     const prompt = buildPrompt(sources);
-    expect(prompt).toContain("Luxury Daily");
     expect(prompt).toContain("Gucci AR Lens");
+    expect(prompt).toContain("[Luxury Daily]");
     expect(prompt).toContain("N'invente aucun lien");
     expect(prompt).toContain("Rédige en français");
   });
 
-  it("should include error messages for failed sources", () => {
+  it("should exclude failed sources from the prompt", () => {
     const sources: SourceResult[] = [
       {
         source: "Glossy",
@@ -71,8 +71,8 @@ describe("buildPrompt", () => {
       },
     ];
     const prompt = buildPrompt(sources);
-    expect(prompt).toContain("Glossy");
-    expect(prompt).toContain("RSS feed unavailable");
+    expect(prompt).not.toContain("Glossy");
+    expect(prompt).not.toContain("RSS feed unavailable");
   });
 
   it("should include score information for prioritization", () => {
@@ -94,8 +94,8 @@ describe("buildPrompt", () => {
     expect(prompt).toContain("342 points");
   });
 
-  it("should limit items per source and truncate summaries", () => {
-    const items = Array.from({ length: 20 }, (_, i) => ({
+  it("should limit total items globally and truncate summaries", () => {
+    const items = Array.from({ length: 30 }, (_, i) => ({
       title: `Item ${i}`,
       url: `https://example.com/${i}`,
       context: "x".repeat(200),
@@ -104,7 +104,7 @@ describe("buildPrompt", () => {
     const sources: SourceResult[] = [{ source: "Test", items }];
     const prompt = buildPrompt(sources);
     const matches = prompt.match(/- \*\*Item \d+\*\*/g);
-    expect(matches).toHaveLength(5);
+    expect(matches).toHaveLength(15);
     expect(prompt).toContain("...");
   });
 });
@@ -212,13 +212,16 @@ describe("synthesize", () => {
     expect(globalThis.fetch).toHaveBeenCalledTimes(2);
   });
 
-  it("should throw after retry failure", async () => {
+  it("should throw after all retries fail", async () => {
     vi.spyOn(globalThis, "fetch")
       .mockResolvedValueOnce(
         new Response(JSON.stringify({ content: "bad" }), { status: 200 }),
       )
       .mockResolvedValueOnce(
         new Response(JSON.stringify({ content: "still bad" }), { status: 200 }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ content: "also bad" }), { status: 200 }),
       );
     await expect(
       synthesize(

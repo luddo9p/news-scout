@@ -30,7 +30,7 @@ function renderStandardItem(item: StandardItem): string {
   const metaParts: string[] = [];
   if (item.author) metaParts.push(escapeHtml(item.author));
   metaParts.push(escapeHtml(item.source));
-  if (item.score) metaParts.push(`${item.score} points`);
+  if (item.score != null) metaParts.push(`${item.score} points`);
   if (metaParts.length > 0) {
     parts.push(
       ` <em style="color:#8e8e93;font-size:13px;">(${metaParts.join(", ")})</em>`,

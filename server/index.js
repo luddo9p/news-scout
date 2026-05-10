@@ -1,12 +1,12 @@
 import express from "express";
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 
 const OLLAMA_CLOUD_URL = process.env.OLLAMA_CLOUD_URL || "https://ollama.com";
 const OLLAMA_API_KEY = process.env.OLLAMA_API_KEY;
 const API_KEY = process.env.API_KEY;
-const DEFAULT_MODEL = "glm-5.1:cloud";
+const DEFAULT_MODEL = "kimi-k2.6:cloud";
 const TIMEOUT_MS = 300000;
 
 // Health check
@@ -34,7 +34,7 @@ app.post("/generate", async (req, res) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${OLLAMA_API_KEY}`,
+        ...(OLLAMA_API_KEY ? { Authorization: `Bearer ${OLLAMA_API_KEY}` } : {}),
       },
       signal: controller.signal,
       body: JSON.stringify({

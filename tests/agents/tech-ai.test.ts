@@ -6,8 +6,8 @@ describe("TECH_AI_CONFIG", () => {
     expect(TECH_AI_CONFIG.name).toBe("tech-ai");
   });
 
-  it("should define 4 source fetchers", () => {
-    expect(TECH_AI_CONFIG.sources).toHaveLength(4);
+  it("should define 8 source fetchers", () => {
+    expect(TECH_AI_CONFIG.sources).toHaveLength(8);
   });
 
   it("should have systemPrompt with AI/tech sections in JSON format", () => {

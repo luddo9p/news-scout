@@ -48,11 +48,8 @@ export async function fetchHackerNews(
       const response = await fetch(url, { signal: controller.signal });
 
       if (!response.ok) {
-        return {
-          source: "Hacker News",
-          items: allItems,
-          error: `API returned ${response.status} for query "${query}"`,
-        };
+        console.error(`[HN] Query "${query}" failed: ${response.status}`);
+        continue;
       }
 
       const data: HNSearchResponse = await response.json();
