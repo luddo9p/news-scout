@@ -169,4 +169,97 @@ describe("runAgent", () => {
     expect(result.sourcesFetched).toBe(1);
     expect(result.sourcesFailed).toBe(0);
   });
+
+  it("should explain why no content was fetched", async () => {
+    const deadConfig: AgentConfig = {
+      ...MOCK_CONFIG,
+      sources: [
+        async () => {
+          throw new Error("Source down");
+        },
+      ],
+    };
+
+    const result = await runAgent(deadConfig);
+
+    expect(result.success).toBe(false);
+    expect(result.errors).toContain("No content fetched from any source");
+    expect(result.errors.some((error) => error.includes("Source down"))).toBe(true);
+  });
+
+  it("should hand the enriched experience link to the model", async () => {
+    const enrichedConfig: AgentConfig = {
+      ...MOCK_CONFIG,
+      enrich: async (sources) =>
+        sources.map((source) => ({
+          ...source,
+          items: source.items.map((item) => ({
+            ...item,
+            experienceUrl: "https://www.dior.com/immersive",
+          })),
+        })),
+    };
+
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(JSON.stringify({ content: VALID_JSON }), { status: 200 }),
+    );
+
+    await runAgent(enrichedConfig);
+
+    const options = vi.mocked(globalThis.fetch).mock.calls[0][1] as RequestInit;
+    const body = JSON.parse(options.body as string);
+    expect(body.prompt).toContain("Lien de l'expérience : https://www.dior.com/immersive");
+  });
+
+  it("should keep running when the enrichment fails", async () => {
+    const brokenConfig: AgentConfig = {
+      ...MOCK_CONFIG,
+      enrich: async () => {
+        throw new Error("search down");
+      },
+    };
+
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(JSON.stringify({ content: VALID_JSON }), { status: 200 }),
+    );
+
+    const result = await runAgent(brokenConfig);
+
+    expect(result.success).toBe(true);
+    expect(result.emailSent).toBe(true);
+  });
+
+  it("should surface degraded source warnings without counting the source as failed", async () => {
+    const degradedConfig: AgentConfig = {
+      ...MOCK_CONFIG,
+      sources: [
+        async () =>
+          ({
+            source: "Degraded Source",
+            items: [
+              {
+                title: "Kept Item",
+                url: "https://example.com/kept",
+                context: "Kept summary",
+                source: "Degraded Source",
+              },
+            ],
+            warnings: ["feed B (https://b.com/rss): HTTP 500"],
+          }) as SourceResult,
+      ],
+    };
+
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(JSON.stringify({ content: VALID_JSON }), { status: 200 }),
+    );
+
+    const result = await runAgent(degradedConfig);
+
+    expect(result.success).toBe(true);
+    expect(result.sourcesFailed).toBe(0);
+    expect(result.errors).toContain(
+      "Degraded Source: feed B (https://b.com/rss): HTTP 500",
+    );
+  });
 });

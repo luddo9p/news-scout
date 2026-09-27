@@ -3,6 +3,7 @@ import { LUXE_DIGITAL_CONFIG } from "./agents/luxe-digital.js";
 import { SCHANG_CONFIG, HIGGONS_CONFIG, MAUGEY_CONFIG, DUNAND_CONFIG } from "./agents/bourse-scout.js";
 import { runAgent } from "./shared/run-agent.js";
 import { runBourseScout } from "./bourse/run-bourse.js";
+import { parseAgentName } from "./shared/agent-args.js";
 
 const STANDARD_AGENTS: Record<string, typeof TECH_AI_CONFIG> = {
   "tech-ai": TECH_AI_CONFIG,
@@ -16,7 +17,7 @@ const BOURSE_AGENTS: Record<string, typeof SCHANG_CONFIG> = {
   "dunand-scout": DUNAND_CONFIG,
 };
 
-const agentName = process.argv[2]?.replace(/^--agent=/, "") || "tech-ai";
+const agentName = parseAgentName(process.argv);
 
 if (BOURSE_AGENTS[agentName]) {
   const config = BOURSE_AGENTS[agentName];

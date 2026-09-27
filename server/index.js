@@ -6,7 +6,7 @@ app.use(express.json({ limit: "1mb" }));
 const OLLAMA_CLOUD_URL = process.env.OLLAMA_CLOUD_URL || "https://ollama.com";
 const OLLAMA_API_KEY = process.env.OLLAMA_API_KEY;
 const API_KEY = process.env.API_KEY;
-const DEFAULT_MODEL = "kimi-k2.6:cloud";
+const DEFAULT_MODEL = "deepseek-v4.1-flash:cloud";
 const TIMEOUT_MS = 300000;
 
 // Health check

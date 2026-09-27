@@ -6,8 +6,19 @@ describe("LUXE_DIGITAL_CONFIG", () => {
     expect(LUXE_DIGITAL_CONFIG.name).toBe("luxe-digital");
   });
 
-  it("should define 3 source fetchers", () => {
-    expect(LUXE_DIGITAL_CONFIG.sources).toHaveLength(3);
+  it("should define 2 source fetchers", () => {
+    expect(LUXE_DIGITAL_CONFIG.sources).toHaveLength(2);
+  });
+
+  it("should enrich the news with resolved experience URLs", () => {
+    // The press never links to the experience itself, so the search step is what
+    // makes the "Expériences à visiter" section possible.
+    expect(typeof LUXE_DIGITAL_CONFIG.enrich).toBe("function");
+  });
+
+  it("should ask for an immersive experiences section", () => {
+    expect(LUXE_DIGITAL_CONFIG.systemPrompt).toContain("Expériences à visiter");
+    expect(LUXE_DIGITAL_CONFIG.systemPrompt).toContain("Lien de l'expérience");
   });
 
   it("should have systemPrompt with luxury-digital sections", () => {

@@ -107,6 +107,73 @@ describe("buildPrompt", () => {
     expect(matches).toHaveLength(15);
     expect(prompt).toContain("...");
   });
+
+  it("should keep an unscored source visible even when another source is heavily scored", () => {
+    const scored = Array.from({ length: 30 }, (_, i) => ({
+      title: `Scored ${i}`,
+      url: `https://news.ycombinator.com/${i}`,
+      context: "s",
+      source: "Hacker News",
+      score: 900 - i,
+    }));
+    const unscored = [
+      {
+        title: "Unscored RSS item",
+        url: "https://rss.example.com/1",
+        context: "s",
+        source: "RSS",
+      },
+    ];
+    const sources: SourceResult[] = [
+      { source: "Hacker News", items: scored },
+      { source: "RSS", items: unscored },
+    ];
+
+    const prompt = buildPrompt(sources);
+
+    // Before the fairness pass, the 30 scored items filled all 15 slots alone.
+    expect(prompt).toContain("Unscored RSS item");
+    expect(prompt.match(/- \*\*Scored \d+\*\*/g)).toHaveLength(14);
+    expect(prompt.match(/- \*\*[^*]+\*\*/g)).toHaveLength(15);
+  });
+
+  it("should give every source a fair share before filling by score", () => {
+    const scored = Array.from({ length: 30 }, (_, i) => ({
+      title: `Scored ${i}`,
+      url: `https://news.ycombinator.com/${i}`,
+      context: "s",
+      source: "Hacker News",
+      score: 900 - i,
+    }));
+    const curated = Array.from({ length: 3 }, (_, i) => ({
+      title: `Experience ${i}`,
+      url: `https://brand${i}.com`,
+      context: "s",
+      source: "Awwwards",
+    }));
+    const small = [
+      {
+        title: "Bluesky post",
+        url: "https://bsky.app/profile/x/post/1",
+        context: "s",
+        source: "Bluesky",
+      },
+    ];
+    const sources: SourceResult[] = [
+      { source: "Hacker News", items: scored },
+      { source: "Awwwards", items: curated },
+      { source: "Bluesky", items: small },
+    ];
+
+    const prompt = buildPrompt(sources);
+
+    // quota = floor(15 / 3) = 5: 5 from HN, all 3 experiences, the Bluesky post,
+    // then the remaining 6 slots go to the best scored items.
+    expect(prompt.match(/- \*\*Experience \d+\*\*/g)).toHaveLength(3);
+    expect(prompt).toContain("Bluesky post");
+    expect(prompt.match(/- \*\*Scored \d+\*\*/g)).toHaveLength(11);
+    expect(prompt.match(/- \*\*[^*]+\*\*/g)).toHaveLength(15);
+  });
 });
 
 describe("extractJson", () => {
@@ -243,6 +310,23 @@ describe("synthesize", () => {
       "Any prompt",
     );
     expect(result.sections).toHaveLength(2);
+  });
+
+  it("should send the configured synthesis model", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(JSON.stringify({ content: VALID_JSON_RESPONSE }), { status: 200 }),
+    );
+    await synthesize(
+      [{ source: "Test", items: [{ title: "T", url: "https://example.com", context: "s", source: "Test" }] }],
+      "http://localhost:3000",
+      "Any system prompt",
+    );
+    const fetchCall = vi.mocked(globalThis.fetch).mock.calls[0];
+    const options = fetchCall[1] as RequestInit;
+    const body = JSON.parse(options.body as string);
+    // The bridge falls back to its own constant when this is missing, so the
+    // client is the source of truth. Keep this assertion in sync on purpose.
+    expect(body.model).toBe("deepseek-v4.1-flash:cloud");
   });
 
   it("should work without API key", async () => {

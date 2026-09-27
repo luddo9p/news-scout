@@ -1,9 +1,134 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { fetchReddit } from "../../src/sources/fetch-reddit.js";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+
+const CLIENT_ID = "test-client-id";
+const CLIENT_SECRET = "test-client-secret";
+const USER_AGENT = "AgentScout-Test/1.0";
+
+/** A fresh module instance per test: the OAuth token cache is module-level. */
+async function loadFetchReddit() {
+  const mod = await import("../../src/sources/fetch-reddit.js");
+  return mod.fetchReddit;
+}
+
+function tokenResponse() {
+  return new Response(
+    JSON.stringify({
+      access_token: "test-access-token",
+      expires_in: 3600,
+      token_type: "bearer",
+    }),
+    { status: 200 },
+  );
+}
+
+function searchResponse(post: Record<string, unknown>) {
+  return new Response(JSON.stringify({ data: { children: [{ data: post }] } }), {
+    status: 200,
+  });
+}
 
 describe("fetchReddit", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.resetModules();
+    process.env.REDDIT_CLIENT_ID = CLIENT_ID;
+    process.env.REDDIT_CLIENT_SECRET = CLIENT_SECRET;
+    process.env.REDDIT_USER_AGENT = USER_AGENT;
+  });
+
+  afterEach(() => {
+    delete process.env.REDDIT_CLIENT_ID;
+    delete process.env.REDDIT_CLIENT_SECRET;
+    delete process.env.REDDIT_USER_AGENT;
+  });
+
+  it("should request an OAuth token with the client_credentials flow", async () => {
+    const post = {
+      id: "abc123",
+      title: "New LLM benchmark results",
+      url: "https://example.com/benchmark",
+      selftext: "",
+      author: "researcher",
+      score: 256,
+      num_comments: 42,
+      created_utc: 1701388800,
+      subreddit: "MachineLearning",
+      permalink: "/r/MachineLearning/comments/abc123/new_llm_benchmark/",
+    };
+
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(tokenResponse())
+      .mockResolvedValueOnce(searchResponse(post));
+
+    const fetchReddit = await loadFetchReddit();
+    await fetchReddit(["MachineLearning"], ["AI"]);
+
+    const [tokenUrl, tokenInit] = fetchSpy.mock.calls[0];
+    expect(tokenUrl).toBe("https://www.reddit.com/api/v1/access_token");
+    expect(tokenInit?.method).toBe("POST");
+    expect(tokenInit?.body).toBe("grant_type=client_credentials");
+
+    const tokenHeaders = tokenInit?.headers as Record<string, string>;
+    expect(tokenHeaders["Content-Type"]).toBe(
+      "application/x-www-form-urlencoded",
+    );
+    expect(tokenHeaders["Authorization"]).toBe(
+      `Basic ${Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64")}`,
+    );
+    expect(tokenHeaders["User-Agent"]).toBe(USER_AGENT);
+
+    // The search itself goes to the OAuth host with the bearer token
+    const [searchUrl, searchInit] = fetchSpy.mock.calls[1];
+    expect(String(searchUrl)).toContain(
+      "https://oauth.reddit.com/r/MachineLearning/search",
+    );
+    expect((searchInit?.headers as Record<string, string>)["Authorization"]).toBe(
+      "Bearer test-access-token",
+    );
+  });
+
+  it("should reuse the token across subreddits instead of asking for one each time", async () => {
+    const postA = {
+      id: "a1",
+      title: "Post A",
+      url: "https://example.com/a",
+      selftext: "",
+      author: "user",
+      score: 10,
+      num_comments: 1,
+      created_utc: 1701388800,
+      subreddit: "MachineLearning",
+      permalink: "/r/MachineLearning/comments/a1/post_a/",
+    };
+    const postB = {
+      id: "b1",
+      title: "Post B",
+      url: "https://example.com/b",
+      selftext: "",
+      author: "user",
+      score: 5,
+      num_comments: 1,
+      created_utc: 1701388800,
+      subreddit: "LocalLLaMA",
+      permalink: "/r/LocalLLaMA/comments/b1/post_b/",
+    };
+
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(tokenResponse())
+      .mockResolvedValueOnce(searchResponse(postA))
+      .mockResolvedValueOnce(searchResponse(postB));
+
+    const fetchReddit = await loadFetchReddit();
+    const result = await fetchReddit(["MachineLearning", "LocalLLaMA"], ["AI"]);
+
+    const tokenCalls = fetchSpy.mock.calls.filter((call) =>
+      String(call[0]).includes("/api/v1/access_token"),
+    );
+    expect(tokenCalls).toHaveLength(1);
+    expect(fetchSpy).toHaveBeenCalledTimes(3);
+    expect(result.items).toHaveLength(2);
   });
 
   it("should search subreddits and return ContentItems", async () => {
@@ -29,10 +154,14 @@ describe("fetchReddit", () => {
       },
     };
 
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify(mockResponse), { status: 200 }),
-    );
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(tokenResponse())
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(mockResponse), { status: 200 }),
+      );
 
+    const fetchReddit = await loadFetchReddit();
     const result = await fetchReddit(["MachineLearning"], ["AI", "LLM"]);
 
     expect(result.source).toBe("Reddit");
@@ -45,7 +174,10 @@ describe("fetchReddit", () => {
       score: 256,
     });
     // Verify 24h date filter (t=day) is applied
-    const calledUrl = fetchSpy.mock.calls[0][0] as string;
+    const searchCall = fetchSpy.mock.calls.find((call) =>
+      String(call[0]).includes("/search"),
+    );
+    const calledUrl = searchCall?.[0] as string;
     expect(calledUrl).toContain("t=day");
     expect(calledUrl).not.toContain("t=week");
   });
@@ -66,19 +198,11 @@ describe("fetchReddit", () => {
 
     // Same post returned from two subreddits
     vi.spyOn(globalThis, "fetch")
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({ data: { children: [{ data: samePost }] } }),
-          { status: 200 },
-        ),
-      )
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({ data: { children: [{ data: samePost }] } }),
-          { status: 200 },
-        ),
-      );
+      .mockResolvedValueOnce(tokenResponse())
+      .mockResolvedValueOnce(searchResponse(samePost))
+      .mockResolvedValueOnce(searchResponse(samePost));
 
+    const fetchReddit = await loadFetchReddit();
     const result = await fetchReddit(["MachineLearning", "LocalLLaMA"], ["AI"]);
 
     expect(result.items).toHaveLength(1);
@@ -106,10 +230,13 @@ describe("fetchReddit", () => {
       },
     };
 
-    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify(mockResponse), { status: 200 }),
-    );
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(tokenResponse())
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(mockResponse), { status: 200 }),
+      );
 
+    const fetchReddit = await loadFetchReddit();
     const result = await fetchReddit(["MachineLearning"], ["AI"]);
 
     expect(result.items[0].url).toBe(
@@ -119,47 +246,82 @@ describe("fetchReddit", () => {
 
   it("should skip failed subreddits and continue", async () => {
     vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(tokenResponse())
       .mockResolvedValueOnce(new Response("Rate limited", { status: 429 }))
       .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            data: {
-              children: [
-                {
-                  data: {
-                    id: "ok1",
-                    title: "Working post",
-                    url: "https://example.com/ok",
-                    selftext: "",
-                    author: "user",
-                    score: 5,
-                    num_comments: 1,
-                    created_utc: 1701388800,
-                    subreddit: "LocalLLaMA",
-                    permalink: "/r/LocalLLaMA/comments/ok1/working_post/",
-                  },
-                },
-              ],
-            },
-          }),
-          { status: 200 },
-        ),
+        searchResponse({
+          id: "ok1",
+          title: "Working post",
+          url: "https://example.com/ok",
+          selftext: "",
+          author: "user",
+          score: 5,
+          num_comments: 1,
+          created_utc: 1701388800,
+          subreddit: "LocalLLaMA",
+          permalink: "/r/LocalLLaMA/comments/ok1/working_post/",
+        }),
       );
 
+    const fetchReddit = await loadFetchReddit();
     const result = await fetchReddit(["MachineLearning", "LocalLLaMA"], ["AI"]);
 
     expect(result.items).toHaveLength(1);
     expect(result.items[0].title).toBe("Working post");
     expect(result.error).toBeUndefined();
+    // The blocked subreddit stays visible instead of looking like an empty one
+    expect(result.warnings).toEqual(["MachineLearning: HTTP 429"]);
   });
 
   it("should return empty items when all subreddits fail", async () => {
-    vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("Network error"));
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(tokenResponse())
+      .mockRejectedValue(new Error("Network error"));
 
+    const fetchReddit = await loadFetchReddit();
     const result = await fetchReddit(["MachineLearning"], ["AI"]);
 
     expect(result.items).toHaveLength(0);
     // Individual fetch errors are swallowed — only top-level errors surface
-    expect(result.error).toBeUndefined();
+    // (revised: a total failure used to be silent, it now surfaces as a source error)
+    expect(result.error).toContain("All 1 subreddits failed");
+  });
+
+  it("should fail loudly when the Reddit credentials are missing", async () => {
+    delete process.env.REDDIT_CLIENT_ID;
+    delete process.env.REDDIT_CLIENT_SECRET;
+
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(() => {
+        throw new Error("no network call expected without credentials");
+      });
+
+    const fetchReddit = await loadFetchReddit();
+    const result = await fetchReddit(["MachineLearning"], ["AI"]);
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(result.source).toBe("Reddit");
+    expect(result.items).toHaveLength(0);
+    expect(result.error).toContain("REDDIT_CLIENT_ID");
+    expect(result.error).toContain("REDDIT_CLIENT_SECRET");
+  });
+
+  it("should surface a source error when the token request fails", async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        new Response("Unauthorized: bad credentials", { status: 401 }),
+      );
+
+    const fetchReddit = await loadFetchReddit();
+    const result = await fetchReddit(["MachineLearning"], ["AI"]);
+
+    // No search attempt after a failed token
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(result.items).toHaveLength(0);
+    expect(result.error).toContain("HTTP 401");
+    expect(result.error).toContain("Unauthorized: bad credentials");
+    expect(result.warnings).toBeUndefined();
   });
 });

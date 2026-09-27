@@ -1,6 +1,5 @@
 import { fetchBluesky } from "../sources/fetch-bluesky.js";
 import { fetchHackerNews } from "../sources/fetch-hackernews.js";
-import { fetchReddit } from "../sources/fetch-reddit.js";
 import { fetchMastodon } from "../sources/fetch-mastodon.js";
 import { fetchDevTo } from "../sources/fetch-devto.js";
 import { fetchRss } from "../sources/fetch-rss.js";
@@ -18,6 +17,7 @@ const BLUESKY_HASHTAGS = [
   "#IA",
 ];
 const HN_QUERIES = ["AI", "LLM"];
+// Kept although the Reddit source is currently unwired: see the note in `sources`.
 const REDDIT_SUBREDDITS = [
   "MachineLearning",
   "LocalLLaMA",
@@ -32,6 +32,14 @@ const RSS_AI_FEEDS: RssFeedConfig[] = [
   { url: "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml", label: "The Verge AI" },
   { url: "https://feeds.arstechnica.com/arstechnica/technology-lab", label: "Ars Technica" },
   { url: "https://techcrunch.com/category/artificial-intelligence/feed/", label: "TechCrunch AI" },
+  { url: "https://openai.com/news/rss.xml", label: "OpenAI News" },
+  { url: "https://blog.google/technology/ai/rss/", label: "Google AI" },
+  { url: "https://deepmind.google/blog/rss.xml", label: "Google DeepMind" },
+  { url: "https://huggingface.co/blog/feed.xml", label: "Hugging Face" },
+  { url: "https://simonwillison.net/atom/everything/", label: "Simon Willison" },
+  { url: "https://www.latent.space/feed", label: "Latent Space" },
+  { url: "https://importai.substack.com/feed", label: "Import AI" },
+  { url: "https://www.wired.com/feed/tag/ai/latest/rss", label: "Wired AI" },
 ];
 
 const SYSTEM_PROMPT = `Tu es Agent Scout, un analyste de veille technologique. Tu synthétises des contenus en JSON structuré.
@@ -87,7 +95,11 @@ export const TECH_AI_CONFIG: AgentConfig = {
         process.env.BLUESKY_APP_PASSWORD,
       ),
     () => fetchHackerNews(HN_QUERIES),
-    () => fetchReddit(REDDIT_SUBREDDITS, REDDIT_KEYWORDS),
+    // Reddit is unwired: oauth.reddit.com answers 403 (an HTML challenge page, not a
+    // 401) to a datacenter IP even with a valid OAuth token, so it returned 0 item in
+    // every measured run. The module and its tests are kept in
+    // `src/sources/fetch-reddit.ts`; re-add
+    // `() => fetchReddit(REDDIT_SUBREDDITS, REDDIT_KEYWORDS),` here to switch it back on.
     () => fetchMastodon(MASTODON_HASHTAGS),
     () => fetchDevTo(DEVTO_TAGS),
     () => fetchRss(RSS_AI_FEEDS),
@@ -98,6 +110,6 @@ export const TECH_AI_CONFIG: AgentConfig = {
   emailBranding: {
     title: "Agent Scout",
     subjectPrefix: "Agent Scout",
-    footerSources: "Bluesky · Hacker News · Reddit · Mastodon · Dev.to · RSS · GitHub Trending · Lobste.rs",
+    footerSources: "Bluesky · Hacker News · Mastodon · Dev.to · RSS · GitHub Trending · Lobste.rs",
   },
 };

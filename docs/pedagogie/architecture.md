@@ -51,7 +51,7 @@ Simple : on compte le nombre total d'articles trouves. Si c'est zero, on arrete 
 
 ### Etape 3 : Resumer (la synthese IA)
 
-On prend tous les articles trouves et on les envoie a une IA (Ollama, modele GLM-5.1) qui tourne sur un serveur distant.
+On prend tous les articles trouves et on les envoie a une IA (Ollama, modele DeepSeek V4.1 Flash) qui tourne sur un serveur distant.
 
 On lui donne deux choses :
 - **Le prompt systeme** : "Tu es Agent Scout, tu fais des resumes en HTML, en francais, avec 3 sections..."
@@ -186,7 +186,7 @@ Un petit serveur (VPS) sur Hetzner fait le pont :
 
 ```
 Ton ordi ──── HTTP ────> VPS (Express API bridge) ──── HTTP ────> Ollama Cloud
-                           port 3001, avec API key       glm-5.1:cloud
+                           port 3001, avec API key       deepseek-v4.1-flash:cloud
 ```
 
 Le VPS a deux conteneurs Docker :

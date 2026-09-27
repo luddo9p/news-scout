@@ -56,16 +56,35 @@ jobs:
           docker compose up -d --build
 
           echo "Running health check..."
+          HEALTHY=0
           for i in 1 2 3 4 5; do
             if curl -sf http://localhost:3001/health > /dev/null 2>&1; then
               echo "Health check passed!"
-              echo "=== Deploy complete at $(date) ==="
-              exit 0
+              HEALTHY=1
+              break
             fi
             echo "Waiting for api-bridge... (attempt $i/5)"
             sleep 3
           done
 
-          echo "ERROR: Health check failed after 5 attempts"
-          exit 1
+          if [ "$HEALTHY" -ne 1 ]; then
+            echo "ERROR: Health check failed after 5 attempts"
+            exit 1
+          fi
+
+          echo "=== Post-deploy run: one real digest per pipeline ==="
+          # Real emails are sent on purpose: this is the deploy-time proof that sources,
+          # bridge and model work end to end. Sources are external and flaky, so a
+          # failed agent warns and logs instead of failing the deployment. The 420s
+          # bound is just above the synthesizer's own 300s timeout.
+          for AGENT in tech-ai bourse-scout; do
+            echo "--- ${AGENT} ---"
+            if timeout 420 npm start --silent -- "--agent=${AGENT}"; then
+              echo "${AGENT}: run completed"
+            else
+              echo "::warning::Agent ${AGENT} failed during the post-deploy run"
+            fi
+          done
+
+          echo "=== Deploy complete at $(date) ==="
           DEPLOY

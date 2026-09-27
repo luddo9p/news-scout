@@ -74,7 +74,7 @@ export function buildBourseChangeEmailHtml(
         formatPrice(c.current.coursAchat),
       ]);
     }
-    content += `</table></td></tr></table></td></tr></table>`;
+    content += `</table></td></tr></table>`;
   }
 
   if (sales.length > 0) {
@@ -94,7 +94,7 @@ export function buildBourseChangeEmailHtml(
         c.current.plusMinusValue,
       ]);
     }
-    content += `</table></td></tr></table></td></tr></table>`;
+    content += `</table></td></tr></table>`;
   }
 
   if (nameChanges.length > 0) {
@@ -110,7 +110,7 @@ export function buildBourseChangeEmailHtml(
         c.current.nom,
       ]);
     }
-    content += `</table></td></tr></table></td></tr></table>`;
+    content += `</table></td></tr></table>`;
   }
 
   return wrapInTemplate(content, title, formattedDate, footerSource);
@@ -160,7 +160,7 @@ export function buildBourseInitEmailHtml(
       a.plusMinusValue,
     ]);
   }
-  content += `</table></td></tr></table></td></tr></table>`;
+  content += `</table></td></tr></table>`;
 
   return wrapInTemplate(content, title, formattedDate, footerSource);
 }

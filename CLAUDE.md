@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Agent Scout is a multi-agent veille platform. Each agent fetches content from sources, synthesizes it via Ollama Cloud (Kimi K2.6), and sends HTML email digests via Resend. All user-facing text is in French.
+Agent Scout is a multi-agent veille platform. Each agent fetches content from sources, synthesizes it via Ollama Cloud (DeepSeek V4.1 Flash), and sends HTML email digests via Resend. All user-facing text is in French.
 
 **Two agent pipelines:**
 - **Standard pipeline** (`runAgent`) — Fetch sources → synthesize → render HTML → send email. Used by: tech-ai, luxe-digital.
@@ -34,6 +34,7 @@ docker compose up -d       # Start VPS services (Ollama + API bridge)
 ### Standard pipeline (`src/shared/run-agent.ts`)
 
 1. Fetch all sources in parallel (`Promise.allSettled` — failures don't stop others)
+1b. Optional `config.enrich` post-processing: the luxe agent uses it to resolve the brand site behind each digital operation (`resolveExperienceUrls`). A failure there never aborts the run
 2. If zero items, skip email
 3. Synthesize via Ollama Cloud → Zod-validated `SynthesisData` (`src/shared/synthesize.ts` → `server/`)
 4. Render deterministic HTML from `SynthesisData` (`src/shared/render.ts`)
@@ -61,7 +62,7 @@ The LLM returns JSON validated against `SynthesisSchema` (`src/shared/synthesis-
 ```
 src/
 ├── shared/           # Types, synthesize, render, email, run-agent, date-filter, synthesis-schema
-├── sources/          # Fetch modules (Bluesky, HN, Reddit, Twitter, RSS, Mastodon, DevTo, Lobsters, TerminalFeed)
+├── sources/          # Fetch modules (Bluesky, HN, Reddit, Twitter, RSS, Awwwards, Mastodon, DevTo, Lobsters, TerminalFeed)
 ├── agents/           # Agent configs (tech-ai, luxe-digital, bourse-scout with 4 variants)
 ├── bourse/           # Bourse-specific: scrape, diff, persistence, email, run-bourse, types
 └── index.ts          # CLI entry point (dispatches to standard or bourse pipeline)
@@ -71,8 +72,8 @@ src/
 
 | Agent | Entry | Sources | Sections |
 |---|---|---|---|
-| **tech-ai** | `src/agents/tech-ai.ts` | Bluesky, HN, Reddit, Mastodon, DevTo, RSS, TerminalFeed (GitHub), Lobste.rs | À lire absolument, Nouveaux Outils, Tendances |
-| **luxe-digital** | `src/agents/luxe-digital.ts` | RSS (Jing Daily, Vogue Business, Luxury Daily, Luxury Roundtable), Reddit, Bluesky | Activations Digitales, Innovations Luxe, Tendances |
+| **tech-ai** | `src/agents/tech-ai.ts` | Bluesky, HN, Mastodon, DevTo, RSS, TerminalFeed (GitHub), Lobste.rs | À lire absolument, Nouveaux Outils, Tendances |
+| **luxe-digital** | `src/agents/luxe-digital.ts` | RSS (Luxury Daily, Luxury Roundtable, WWD, Vogue, Hypebeast, Highsnobiety, Retail Dive, Hodinkee, Road to VR), Bluesky, plus a web-search enrichment that resolves the brand site behind each operation | Expériences à visiter, Activations Digitales, Innovations Luxe, Tendances |
 | **bourse-scout** (×4) | `src/agents/bourse-scout.ts` | WordPress API (bourse-portefeuille-conseil.fr) | Portfolio change tracking |
 
 ### Source modules
@@ -81,19 +82,21 @@ src/
 |---|---|---|---|
 | `fetch-bluesky.ts` | AT Protocol `app.bsky.feed.searchPosts` | Optional `BLUESKY_HANDLE` + `BLUESKY_APP_PASSWORD` | Authenticates via `createSession` if credentials provided |
 | `fetch-hackernews.ts` | Algolia HN search | None | Queries run sequentially, results deduplicated by URL |
-| `fetch-reddit.ts` | Reddit search API | None | Searches subreddits in parallel, deduplicates by URL |
+| `fetch-reddit.ts` | Reddit OAuth2 (`oauth.reddit.com`) | `REDDIT_CLIENT_ID` + `REDDIT_CLIENT_SECRET` | **Not wired into any agent**: Reddit answers 403 with an HTML challenge page to a datacenter IP even with a valid token. `client_credentials` token cached for the run; module and tests kept |
 | `fetch-twitter.ts` | Apify `apidojo~tweet-scraper` | `APIFY_API_KEY` | Synchronous run, 15s timeout, 10 items max |
 | `fetch-rss.ts` | RSS 2.0 / Atom feeds | None | Uses `fast-xml-parser`, deduplicates by URL across feeds |
+| `fetch-awwwards.ts` | Awwwards award galleries (`luxury`, `fashion`, `jewelry`, `beauty`) | None | **Not wired into any agent**: the luxe veille targets operations the award galleries do not cover. Scrapes the live URL of each awarded site; module and tests kept |
+| `resolve-experience.ts` | Brave Search API, DuckDuckGo fallback | `BRAVE_API_KEY` (optional) | Not a source: the luxe agent's `enrich` hook. The press never links to the experience itself, so this searches the brand site behind each digital operation and attaches it as `experienceUrl`. Keeps only a result whose host starts with (or contains) a significant word of the title |
 | `fetch-mastodon.ts` | Mastodon `/api/v2/search` | None | Searches hashtags on mastodon.social |
 | `fetch-devto.ts` | Dev.to `/api/articles` | None | Searches by tags, 24h date filter |
 | `fetch-lobsters.ts` | Lobste.rs `/hottest.json` | None | No date filter (already curated), 24h client-side filter |
 | `fetch-terminalfeed.ts` | GitHub `/search/repositories` | None | Trending repos via GitHub API, 24h date filter |
 
-All source modules use `getSinceTimestamp()` from `src/shared/date-filter.ts` for 24h filtering.
+Most source modules use `getSinceTimestamp()` from `src/shared/date-filter.ts` for 24h filtering. `fetch-rss.ts` and `fetch-awwwards.ts` take a per-agent window (24 h for the twice-daily tech agent, 7 days for the weekly luxe-digital agent) because a 24 h window would leave a weekly agent with a single day of content. `fetch-reddit.ts` uses the Reddit `t=` parameter but is currently unwired.
 
 ### VPS (Docker)
 
-`server/` — Express bridge (`index.js`) exposing `POST /generate`, proxying to Ollama at `http://ollama:11434/api/generate`. Model: `kimi-k2.6:cloud`. Secured via `x-api-key` header. Docker Compose orchestrates `ollama` + `api-bridge` on an internal network.
+`server/` — Express bridge (`index.js`) exposing `POST /generate`, proxying to Ollama at `http://ollama:11434/api/generate`. Model: `deepseek-v4.1-flash:cloud`. Secured via `x-api-key` header. Docker Compose orchestrates `ollama` + `api-bridge` on an internal network.
 
 ### Email
 
@@ -108,7 +111,7 @@ tests/
 ├── agents/      # tech-ai.test.ts, luxe-digital.test.ts, run-agent.test.ts
 ├── bourse/      # diff.test.ts, persistence.test.ts, scrape.test.ts
 ├── shared/      # render.test.ts, synthesize.test.ts, synthesis-schema.test.ts, send-email.test.ts, date-filter.test.ts, types.test.ts
-└── sources/     # fetch-bluesky.test.ts, fetch-hackernews.test.ts, fetch-reddit.test.ts, fetch-rss.test.ts, fetch-twitter.test.ts
+└── sources/     # fetch-bluesky.test.ts, fetch-hackernews.test.ts, fetch-reddit.test.ts, fetch-rss.test.ts, fetch-twitter.test.ts, fetch-awwwards.test.ts, resolve-experience.test.ts
 ```
 
 Mocking: `vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(...))` for external API calls. The `resend` module is mocked at module level with `vi.mock("resend", ...)`.
@@ -116,7 +119,7 @@ Mocking: `vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(...))
 ## Environment Variables
 
 Required: `VPS_URL`, `RESEND_API_KEY`, `RESEND_TO`
-Optional: `API_KEY` (VPS auth), `RESEND_FROM` (default: `onboarding@resend.dev`), `BLUESKY_HANDLE`, `BLUESKY_APP_PASSWORD`, `APIFY_API_KEY`, `BOURSE_PORTFOLIO_URL`, `HIGGONS_PORTFOLIO_URL`, `MAUGEY_PORTFOLIO_URL`, `DUNAND_PORTFOLIO_URL`, `BOURSE_STATE_PATH`, `HIGGONS_STATE_PATH`, `MAUGEY_STATE_PATH`, `DUNAND_STATE_PATH`
+Optional: `API_KEY` (VPS auth), `RESEND_FROM` (default: `onboarding@resend.dev`), `BLUESKY_HANDLE`, `BLUESKY_APP_PASSWORD`, `APIFY_API_KEY`, `BRAVE_API_KEY`, `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_USER_AGENT`, `BOURSE_PORTFOLIO_URL`, `HIGGONS_PORTFOLIO_URL`, `MAUGEY_PORTFOLIO_URL`, `DUNAND_PORTFOLIO_URL`, `BOURSE_STATE_PATH`, `HIGGONS_STATE_PATH`, `MAUGEY_STATE_PATH`, `DUNAND_STATE_PATH`
 
 ## Key Constraints
 
@@ -145,5 +148,5 @@ Optional: `API_KEY` (VPS auth), `RESEND_FROM` (default: `onboarding@resend.dev`)
 ## Deployment
 
 - **GitHub Actions**: `.github/workflows/deploy.yml` — push to `main` triggers test + SSH deploy
-- **Deploy process**: SSH to VPS → git pull → npm ci → npm run build → docker compose up -d --build → health check
+- **Deploy process**: SSH to VPS → git pull → npm ci → npm run build → docker compose up -d --build → health check → post-deploy run of `tech-ai` and `bourse-scout` (one real digest per pipeline, non-blocking so a flaky source cannot fail the deploy)
 - **Deploy path on VPS**: `/opt/agent-scout`

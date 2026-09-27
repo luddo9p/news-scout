@@ -1,8 +1,8 @@
 import { SynthesisSchema } from "./synthesis-schema.js";
 import type { SynthesisData } from "./synthesis-schema.js";
-import type { SourceResult } from "./types.js";
+import type { ContentItem, SourceResult } from "./types.js";
 
-const DEFAULT_MODEL = "kimi-k2.6:cloud";
+const DEFAULT_MODEL = "deepseek-v4.1-flash:cloud";
 const TIMEOUT_MS = 300000;
 const MAX_TOTAL_ITEMS = 15;
 const REDUCED_TOTAL_ITEMS = 10;
@@ -39,13 +39,36 @@ export function buildPrompt(sources: SourceResult[], maxTotal = MAX_TOTAL_ITEMS)
   content += "- Utilise les scores (points) pour prioriser les items dans les sections importantes.\n\n";
 
   // Merge all items, sort by score, keep top N globally
-  const allItems = sources
+  // Fair share first: every source gets up to `quota` slots before scoring decides.
+  // Without it a small curated source (8 Awwwards experiences) is wiped out by a
+  // firehose like Luxury Daily, or by the scores Hacker News and GitHub always carry.
+  const rankedPerSource = sources
     .filter((s) => !s.error && s.items.length > 0)
-    .flatMap((s) => s.items)
-    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
-    .slice(0, maxTotal);
+    .map((s) => [...s.items].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)));
 
-  for (const item of allItems) {
+  const quota =
+    rankedPerSource.length > 0
+      ? Math.max(1, Math.floor(maxTotal / rankedPerSource.length))
+      : 0;
+
+  const selected: ContentItem[] = [];
+  for (const ranked of rankedPerSource) {
+    for (let taken = 0; taken < quota && selected.length < maxTotal; taken++) {
+      const [next] = ranked.splice(0, 1);
+      if (!next) break;
+      selected.push(next);
+    }
+  }
+
+  const byScore = rankedPerSource
+    .flat()
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+  for (const item of byScore) {
+    if (selected.length >= maxTotal) break;
+    selected.push(item);
+  }
+
+  for (const item of selected) {
     const ctx =
       item.context.length > MAX_SUMMARY_LENGTH
         ? item.context.slice(0, MAX_SUMMARY_LENGTH) + "..."
@@ -55,6 +78,9 @@ export function buildPrompt(sources: SourceResult[], maxTotal = MAX_TOTAL_ITEMS)
     if (item.score) content += ` [${item.score} points]`;
     content += ` [${item.source}]`;
     content += `\n  Lien : ${item.url}`;
+    if (item.experienceUrl) {
+      content += `\n  Lien de l'expérience : ${item.experienceUrl}`;
+    }
     content += `\n  Contexte : ${ctx}\n`;
   }
 

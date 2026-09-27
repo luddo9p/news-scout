@@ -1,6 +1,6 @@
 # Agent Scout
 
-Plateforme multi-agents de veille automatisée. Récupère les contenus de multiples sources, les synthétise via Ollama Cloud (GLM-5.1), et envoie des résumés HTML par email via Resend.
+Plateforme multi-agents de veille automatisée. Récupère les contenus de multiples sources, les synthétise via Ollama Cloud (DeepSeek V4.1 Flash), et envoie des résumés HTML par email via Resend.
 
 ## Agents
 
@@ -59,6 +59,8 @@ npm run test:watch                 # Vitest en watch mode
 | `BLUESKY_HANDLE` | ❌ | Handle Bluesky pour rate limiting |
 | `BLUESKY_APP_PASSWORD` | ❌ | Mot de passe app Bluesky |
 | `APIFY_API_KEY` | ❌ | Pour X/Twitter via Apify |
+
+La source Reddit est débranchée des agents : `oauth.reddit.com` renvoie 403 avec une page de challenge HTML depuis une IP de datacenter, même avec un jeton OAuth valide. Le module `fetch-reddit.ts` (OAuth2 `client_credentials`, variables `REDDIT_CLIENT_ID` et `REDDIT_CLIENT_SECRET`, `REDDIT_USER_AGENT` optionnel) reste présent et testé : le rebrancher se fait en une ligne dans les configs d'agents.
 
 ## Cron (VPS)
 

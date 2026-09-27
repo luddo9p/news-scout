@@ -2,6 +2,16 @@ import { synthesize } from "./synthesize.js";
 import { buildEmailHtml, makeEmailSubject, sendEmail } from "./send-email.js";
 import type { AgentConfig, ScoutResult, SourceResult } from "./types.js";
 
+/** Source failures and degraded-source notices, prefixed with the source name. */
+function collectSourceIssues(sources: SourceResult[]): string[] {
+  return [
+    ...sources.filter((s) => s.error).map((s) => `${s.source}: ${s.error}`),
+    ...sources.flatMap((s) =>
+      (s.warnings ?? []).map((warning) => `${s.source}: ${warning}`),
+    ),
+  ];
+}
+
 export async function runAgent(config: AgentConfig): Promise<ScoutResult> {
   console.log(`[${config.emailBranding.title}] Starting run...`);
   const startTime = Date.now();
@@ -10,7 +20,7 @@ export async function runAgent(config: AgentConfig): Promise<ScoutResult> {
   console.log(`[${config.emailBranding.title}] Fetching sources...`);
   const results = await Promise.allSettled(config.sources.map((fn) => fn()));
 
-  const sources: SourceResult[] = results.map((result, index) => {
+  let sources: SourceResult[] = results.map((result, index) => {
     if (result.status === "fulfilled") {
       return result.value;
     }
@@ -34,6 +44,24 @@ export async function runAgent(config: AgentConfig): Promise<ScoutResult> {
       console.log(`  [${config.emailBranding.title}] ✅ ${s.source}: ${s.items.length} items`);
     }
   }
+  for (const s of sources) {
+    for (const warning of s.warnings ?? []) {
+      console.log(`  [${config.emailBranding.title}] ⚠️ ${s.source}: ${warning}`);
+    }
+  }
+
+  // 1b. Optional enrichment (e.g. resolving experience URLs). A failure here must
+  // never cost the run: the items are simply left as fetched.
+  if (config.enrich) {
+    try {
+      sources = await config.enrich(sources);
+    } catch (err) {
+      console.error(
+        `[${config.emailBranding.title}] Enrichment failed:`,
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  }
 
   // 2. Check if we have any content
   const totalItems = sources.reduce((sum, s) => sum + s.items.length, 0);
@@ -46,7 +74,7 @@ export async function runAgent(config: AgentConfig): Promise<ScoutResult> {
       sourcesFetched,
       sourcesFailed,
       emailSent: false,
-      errors: ["No content fetched from any source"],
+      errors: ["No content fetched from any source", ...collectSourceIssues(sources)],
     };
   }
 
@@ -125,7 +153,7 @@ export async function runAgent(config: AgentConfig): Promise<ScoutResult> {
     sourcesFailed,
     emailSent: emailResult.success,
     errors: [
-      ...sources.filter((s) => s.error).map((s) => `${s.source}: ${s.error}`),
+      ...collectSourceIssues(sources),
       ...(emailResult.error ? [`Resend: ${emailResult.error}`] : []),
     ],
   };
