@@ -55,8 +55,12 @@ const RSS_FEEDS = [
     label: "Road to VR",
   },
 ];
-/** The agent runs once a week: a 24 h window would only ever see a single day. */
-const RSS_MAX_AGE_HOURS = 24 * 7;
+/**
+ * The VPS crontab runs this agent every day at 14:30, not weekly as the docs claimed.
+ * A 7-day window on a daily run would repeat the same news in seven consecutive
+ * digests: there is no cross-run deduplication. Raise it again if the cadence changes.
+ */
+const RSS_MAX_AGE_HOURS = 24;
 const BLUESKY_HASHTAGS = [
   "#Luxury",
   "#DigitalLuxury",

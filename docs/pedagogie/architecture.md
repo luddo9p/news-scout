@@ -186,7 +186,7 @@ Un petit serveur (VPS) sur Hetzner fait le pont :
 
 ```
 Ton ordi ──── HTTP ────> VPS (Express API bridge) ──── HTTP ────> Ollama Cloud
-                           port 3001, avec API key       deepseek-v4.1-flash:cloud
+                           port 8000, avec API key       deepseek-v4.1-flash:cloud
 ```
 
 Le VPS a deux conteneurs Docker :
@@ -196,7 +196,7 @@ Le VPS a deux conteneurs Docker :
 ### Securite
 
 - Le VPS n'accepte les requetes que si elles ont la bonne cle API (`x-api-key`)
-- L'API bridge tourne sur le port 3001
+- L'API bridge tourne sur le port 8000
 - Ollama est sur un reseau Docker interne (pas accessible depuis internet)
 
 ---

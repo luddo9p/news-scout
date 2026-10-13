@@ -34,7 +34,7 @@ cp .env.example .env   # puis remplir les clés API
 docker compose up -d
 ```
 
-Le bridge Express expose `POST /generate` sur le port 3001, proxy vers l'API Ollama Cloud.
+Le bridge Express expose `POST /generate` sur le port 8000, proxy vers l'API Ollama Cloud.
 
 ## Développement
 
@@ -67,12 +67,12 @@ La source Reddit est débranchée des agents : `oauth.reddit.com` renvoie 403 av
 Horaires en heure de Paris :
 
 ```crontab
-0  9,17 * * * /opt/agent-scout/cron-run.sh --agent tech-ai
-0  10    * * 1 /opt/agent-scout/cron-run.sh --agent luxe-digital
-0  18    * * * /opt/agent-scout/cron-run.sh --agent bourse-scout
-5  18    * * * /opt/agent-scout/cron-run.sh --agent higgons-scout
-10 18    * * * /opt/agent-scout/cron-run.sh --agent maugey-scout
-15 18    * * * /opt/agent-scout/cron-run.sh --agent dunand-scout
+35 8  * * * /opt/agent-scout/cron-run.sh --agent=tech-ai
+30 14 * * * /opt/agent-scout/cron-run.sh --agent=luxe-digital
+0  18 * * * /opt/agent-scout/cron-run.sh --agent=bourse-scout
+5  18 * * * /opt/agent-scout/cron-run.sh --agent=higgons-scout
+10 18 * * * /opt/agent-scout/cron-run.sh --agent=maugey-scout
+15 18 * * * /opt/agent-scout/cron-run.sh --agent=dunand-scout
 ```
 
 ## Licence

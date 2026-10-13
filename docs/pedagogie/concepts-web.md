@@ -106,7 +106,7 @@ Les mots de passe et cles API ne doivent **jamais** etre ecrits dans le code. On
 ```
 RESEND_API_KEY=re_xxxxx
 APIFY_API_KEY=apify_api_xxxxx
-VPS_URL=http://46.225.59.42:3001
+VPS_URL=http://46.225.59.42:8000
 ```
 
 Le code lit ces valeurs avec `process.env.RESEND_API_KEY`. Le fichier `.env` n'est jamais commit sur Git (il est dans `.gitignore`).

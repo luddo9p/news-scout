@@ -20,7 +20,7 @@ docker compose up -d --build
 
 echo "Running health check..."
 for i in 1 2 3 4 5; do
-  if curl -sf http://localhost:3001/health > /dev/null 2>&1; then
+  if curl -sf http://localhost:8000/health > /dev/null 2>&1; then
     echo "Health check passed!"
     echo "=== Deploy complete at $(date) ==="
     exit 0

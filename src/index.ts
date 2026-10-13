@@ -4,6 +4,7 @@ import { SCHANG_CONFIG, HIGGONS_CONFIG, MAUGEY_CONFIG, DUNAND_CONFIG } from "./a
 import { runAgent } from "./shared/run-agent.js";
 import { runBourseScout } from "./bourse/run-bourse.js";
 import { parseAgentName } from "./shared/agent-args.js";
+import { sendFailureAlert } from "./shared/alert.js";
 
 const STANDARD_AGENTS: Record<string, typeof TECH_AI_CONFIG> = {
   "tech-ai": TECH_AI_CONFIG,
@@ -17,37 +18,55 @@ const BOURSE_AGENTS: Record<string, typeof SCHANG_CONFIG> = {
   "dunand-scout": DUNAND_CONFIG,
 };
 
+/** Warns on failure, then exits with the run's own status. */
+async function finish(
+  agentName: string,
+  success: boolean,
+  errors: string[],
+): Promise<never> {
+  if (!success) {
+    await sendFailureAlert(agentName, errors);
+  }
+  process.exit(success ? 0 : 1);
+}
+
 const agentName = parseAgentName(process.argv);
 
 if (BOURSE_AGENTS[agentName]) {
   const config = BOURSE_AGENTS[agentName];
   runBourseScout(config)
-    .then((result) => {
+    .then(async (result) => {
       console.log(`[${config.branding.title}] Result:`, JSON.stringify(result, null, 2));
-      process.exit(result.success ? 0 : 1);
+      await finish(config.name, result.success, result.errors);
     })
-    .catch((err) => {
+    .catch(async (err) => {
       console.error(`[${config.branding.title}] Fatal error:`, err);
-      process.exit(1);
+      await finish(config.name, false, [
+        err instanceof Error ? err.message : String(err),
+      ]);
     });
 } else if (STANDARD_AGENTS[agentName]) {
   const config = STANDARD_AGENTS[agentName];
 
   runAgent(config)
-    .then((result) => {
+    .then(async (result) => {
       console.log(
         `[${config.emailBranding.title}] Result:`,
         JSON.stringify(result, null, 2),
       );
-      process.exit(result.success ? 0 : 1);
+      await finish(config.name, result.success, result.errors);
     })
-    .catch((err) => {
+    .catch(async (err) => {
       console.error(`[${config.emailBranding.title}] Fatal error:`, err);
-      process.exit(1);
+      await finish(config.name, false, [
+        err instanceof Error ? err.message : String(err),
+      ]);
     });
 } else {
-  console.error(
-    `Unknown agent: "${agentName}". Available: ${[...Object.keys(STANDARD_AGENTS), ...Object.keys(BOURSE_AGENTS)].join(", ")}`,
-  );
+  const message = `Unknown agent: "${agentName}". Available: ${[...Object.keys(STANDARD_AGENTS), ...Object.keys(BOURSE_AGENTS)].join(", ")}`;
+  console.error(message);
+  // This is the failure class that ran silently in cron for two weeks: the alert is
+  // the only trace the operator gets.
+  await sendFailureAlert(agentName, [message]);
   process.exit(1);
 }

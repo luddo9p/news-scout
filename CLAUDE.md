@@ -92,7 +92,7 @@ src/
 | `fetch-lobsters.ts` | Lobste.rs `/hottest.json` | None | No date filter (already curated), 24h client-side filter |
 | `fetch-terminalfeed.ts` | GitHub `/search/repositories` | None | Trending repos via GitHub API, 24h date filter |
 
-Most source modules use `getSinceTimestamp()` from `src/shared/date-filter.ts` for 24h filtering. `fetch-rss.ts` and `fetch-awwwards.ts` take a per-agent window (24 h for the twice-daily tech agent, 7 days for the weekly luxe-digital agent) because a 24 h window would leave a weekly agent with a single day of content. `fetch-reddit.ts` uses the Reddit `t=` parameter but is currently unwired.
+Most source modules use `getSinceTimestamp()` from `src/shared/date-filter.ts` for 24h filtering. `fetch-rss.ts` takes a per-agent window, set to 24 h for both agents because each now runs once a day; widen it only if a cadence becomes weekly, otherwise the same news repeats in consecutive digests. `fetch-reddit.ts` uses the Reddit `t=` parameter but is currently unwired.
 
 ### VPS (Docker)
 
@@ -129,19 +129,21 @@ Optional: `API_KEY` (VPS auth), `RESEND_FROM` (default: `onboarding@resend.dev`)
 - `systemPrompt` is per-agent (not hardcoded in synthesize) — each agent defines its own sections and tone
 - Synthesis output is validated via Zod (`SynthesisSchema`) before rendering — the LLM never generates HTML
 - Bourse agents use a separate pipeline (scrape → diff → email) with JSON state persistence in `data/`
-- Cron (VPS crontab, Paris time):
-  - `0 9,17 * * *` tech-ai (2×/jour)
-  - `0 10 * * 1` luxe-digital (1×/semaine, lundi)
+- Every failed run sends an alert email (`src/shared/alert.ts`, called from `src/index.ts`), including an unknown agent name: a silent failure used to leave nothing but an unread log file
+- Cron (VPS crontab, Paris time — these are the real entries, not the ones this doc used to claim):
+  - `35 8 * * *` tech-ai (1×/jour)
+  - `30 14 * * *` luxe-digital (1×/jour)
   - `0 18 * * *` bourse-scout (1×/jour)
   - `5 18 * * *` higgons-scout (1×/jour)
   - `10 18 * * *` maugey-scout (1×/jour)
   - `15 18 * * *` dunand-scout (1×/jour)
+- `cron-run.sh` accepts both `--agent name` and `--agent=name`; reading only `$1` made every cron run fail with `Unknown agent: "--agent"` between 27/09 and 13/10 without a single alert
 
 ## VPS
 
 - **IP**: 46.225.59.42
-- **API Bridge**: http://46.225.59.42:3001
-- **Health check**: `curl http://46.225.59.42:3001/health`
+- **API Bridge**: currently `http://46.225.59.42:3001` in production. `docker-compose.yml` in this repo maps **8000**, so the next deploy moves it: update `VPS_URL` in the VPS `.env` to `http://localhost:8000` in the same window, or every agent fails with a connection error
+- **Health check**: `curl http://46.225.59.42:3001/health` (switch to 8000 once deployed)
 - **SSH**: `ssh root@46.225.59.42`
 - **API Key**: Set in `API_KEY` env var
 
